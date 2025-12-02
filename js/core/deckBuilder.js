@@ -104,7 +104,9 @@ class DeckBuilder {
         });
         
         if (success) {
-            AnimationManager.showNotification('Deck saved successfully!', 'success', 2000);
+            // Set as current deck
+            StorageManager.setCurrentDeck(this.currentDeck.name);
+            AnimationManager.showNotification('Deck saved and selected!', 'success', 2000);
             return true;
         } else {
             AnimationManager.showNotification('Failed to save deck!', 'error', 2000);

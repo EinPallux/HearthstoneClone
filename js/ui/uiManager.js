@@ -183,6 +183,9 @@ const UIManager = {
         const currentDeck = StorageManager.getCurrentDeck();
         if (currentDeck) {
             this.deckBuilder.loadDeck(currentDeck.name);
+        } else {
+            // Set a default name
+            this.deckBuilder.currentDeck.name = 'My Deck';
         }
         
         this.updateDeckBuilder();
@@ -207,16 +210,21 @@ const UIManager = {
         // Check if hero selected
         const selectedHero = StorageManager.getSelectedHero();
         if (!selectedHero) {
-            AnimationManager.showNotification('Please select a hero first!', 'error', 2000);
-            this.showHeroSelection();
+            AnimationManager.showNotification('Please select a hero first!', 'error', 3000);
+            setTimeout(() => {
+                this.showHeroSelection();
+            }, 1000);
             return;
         }
         
         // Check if deck exists
         const currentDeck = StorageManager.getCurrentDeck();
         if (!currentDeck || currentDeck.cards.length !== 25) {
-            AnimationManager.showNotification('Please build a 25-card deck first!', 'error', 2000);
-            this.showDeckBuilder();
+            AnimationManager.showNotification('Please build a 25-card deck first!', 'error', 3000);
+            AnimationManager.showNotification('💡 Tip: Use "AI Suggest Deck" or "Pre-Built Decks" for quick start!', 'info', 5000);
+            setTimeout(() => {
+                this.showDeckBuilder();
+            }, 1000);
             return;
         }
         
@@ -461,6 +469,14 @@ const UIManager = {
         
         this.deckBuilder.suggestDeck(randomArchetype);
         this.updateDeckBuilder();
+        
+        // Auto-save the suggested deck
+        setTimeout(() => {
+            if (this.deckBuilder.currentDeck.cards.length === 25) {
+                this.deckBuilder.saveDeck();
+                this.updateDeckBuilder();
+            }
+        }, 500);
     },
     
     /**
@@ -480,6 +496,14 @@ const UIManager = {
         };
         
         this.updateDeckBuilder();
+        
+        // Auto-save the pre-built deck
+        setTimeout(() => {
+            if (this.deckBuilder.currentDeck.cards.length === 25) {
+                this.deckBuilder.saveDeck();
+                this.updateDeckBuilder();
+            }
+        }, 500);
     },
     
     // ============================================
