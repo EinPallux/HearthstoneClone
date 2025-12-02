@@ -1,784 +1,369 @@
 /* ============================================
-   ARCANE LEGENDS - CUSTOM STYLES
+   ARCANE LEGENDS - VISUAL CORE
    ============================================ */
 
-/* === GLOBAL STYLES === */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* --- CORE RESETS & UTILITIES --- */
+:root {
+    --card-width: 140px;
+    --card-height: 200px;
+    --card-radius: 12px;
+    
+    /* Z-Index Layers */
+    --z-background: 0;
+    --z-board: 10;
+    --z-hand: 40;
+    --z-ui: 50;
+    --z-tooltip: 100;
+    --z-vfx: 200;
+    --z-overlay: 300;
 }
 
 body {
     font-family: 'Montserrat', sans-serif;
-    overflow-x: hidden;
+    background-color: #0f172a; /* Slate 900 fallback */
+    overflow: hidden; /* Prevent scrolling during gameplay */
+    user-select: none; /* Prevent text selection */
 }
 
-/* === CUSTOM SCROLLBAR === */
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+/* Custom Scrollbar for collections/lists */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
 }
-
-::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(30, 41, 59, 0.5);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
     border-radius: 10px;
 }
-
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #8b5cf6, #6366f1);
-    border-radius: 10px;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #a78bfa, #818cf8);
+/* Text Shadows */
+.text-shadow-glow {
+    text-shadow: 0 0 10px currentColor;
+}
+.text-outline {
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
 
-/* === CARD STYLES === */
+/* ============================================
+   3D CARD ENGINE
+   ============================================ */
+
+/* The Card Container */
 .card {
     position: relative;
-    width: 180px;
-    height: 250px;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                0 0 20px rgba(139, 92, 246, 0.2);
-    border: 2px solid transparent;
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: var(--card-radius);
+    background-color: #1e293b;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-style: preserve-3d;
+    cursor: grab;
+    overflow: visible; /* Allow glows to bleed out */
+}
+
+/* Card Content Layer (The Art & Text) */
+.card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--card-radius);
     overflow: hidden;
+    backface-visibility: hidden;
+    background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+    border: 2px solid #475569;
 }
 
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
+/* Hover Effects */
 .card:hover {
-    transform: translateY(-12px) scale(1.05);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4),
-                0 0 40px rgba(139, 92, 246, 0.5);
-    border-color: rgba(139, 92, 246, 0.6);
-    z-index: 10;
-}
-
-.card:hover::before {
-    opacity: 1;
-}
-
-.card-glow {
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #8b5cf6, #6366f1, #8b5cf6);
-    border-radius: 12px;
-    opacity: 0;
-    z-index: -1;
-    filter: blur(8px);
-    transition: opacity 0.3s;
-}
-
-.card:hover .card-glow {
-    opacity: 0.6;
-    animation: rotate-glow 3s linear infinite;
-}
-
-/* === CARD RARITY STYLES === */
-.card-common {
-    border-color: #94a3b8;
-}
-
-.card-rare {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                0 0 20px rgba(59, 130, 246, 0.3);
-}
-
-.card-epic {
-    border-color: #a855f7;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                0 0 20px rgba(168, 85, 247, 0.3);
-}
-
-.card-legendary {
-    border-color: #f59e0b;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                0 0 20px rgba(245, 158, 11, 0.4);
-    animation: legendary-pulse 2s ease-in-out infinite;
-}
-
-/* === CARD IN HAND STYLES === */
-.card-in-hand {
-    width: 140px;
-    height: 200px;
-    transition: all 0.3s ease;
-    margin-bottom: 20px;
-}
-
-.card-in-hand:hover {
-    transform: translateY(-25px) scale(1.12);
-    z-index: 50;
-}
-
-/* === MINION CARD ON BOARD === */
-.minion-card {
-    width: 130px;
-    height: 170px;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-radius: 10px;
+    transform: translateY(-20px) scale(1.1) rotateX(5deg) !important; /* Override inline styles on hover */
+    z-index: 100 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Rarity Borders & Glows */
+.card.rarity-common { border-color: #94a3b8; }
+.card.rarity-rare { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+.card.rarity-epic { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+
+.card.rarity-legendary { 
+    border-color: #f59e0b;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+    animation: legendary-pulse 4s infinite ease-in-out;
+}
+
+/* In-Hand Specifics */
+.card-in-hand {
+    transform-origin: bottom center;
+    box-shadow: -5px 5px 10px rgba(0,0,0,0.5);
+}
+
+/* On-Board Minion Token */
+.minion-card {
+    width: 100px;
+    height: 130px;
     position: relative;
+    background: #1e293b;
+    border-radius: 50%; /* Oval portrait style often seen in these games */
+    border: 3px solid #64748b;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .minion-card:hover {
-    transform: scale(1.08);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(139, 92, 246, 0.4);
+    transform: scale(1.1);
+    border-color: #cbd5e1;
+    z-index: 20;
 }
 
-.minion-card.can-attack {
-    border: 3px solid #22c55e;
-    cursor: pointer;
-    animation: can-attack-pulse 1.5s ease-in-out infinite;
-}
-
-.minion-card.attacking {
-    animation: attack-shake 0.5s ease;
-}
-
-.minion-card.taking-damage {
-    animation: damage-shake 0.4s ease;
-}
-
-.minion-card.exhausted {
-    opacity: 0.6;
-    filter: grayscale(0.5);
-}
-
-/* === HERO PORTRAIT STYLES === */
-.hero-portrait {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: all 0.3s ease;
-}
-
-.hero-avatar {
-    width: 120px;
-    height: 120px;
+/* Minion Stats Badges */
+.stat-badge {
+    position: absolute;
+    bottom: 5px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px;
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-    position: relative;
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: white;
+    text-shadow: 1px 1px 0 #000;
+    border: 2px solid rgba(0,0,0,0.5);
+    z-index: 5;
 }
 
-.hero-avatar::after {
+.stat-attack {
+    left: 0;
+    background: radial-gradient(circle at 30% 30%, #fbbf24, #b45309);
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
+}
+
+.stat-health {
+    right: 0;
+    background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================
+   GAMEPLAY STATES
+   ============================================ */
+
+/* Valid Target (Green/Red Glow) */
+.target-valid-friendly {
+    box-shadow: 0 0 0 4px #22c55e, 0 0 20px #22c55e !important;
+    animation: pulse-green 1.5s infinite;
+}
+
+.target-valid-enemy {
+    box-shadow: 0 0 0 4px #ef4444, 0 0 20px #ef4444 !important;
+    animation: pulse-red 1.5s infinite;
+    cursor: crosshair;
+}
+
+/* Can Attack (Green Aura) */
+.can-attack {
+    box-shadow: 0 0 15px #22c55e;
+}
+.can-attack:hover {
+    box-shadow: 0 0 25px #4ade80;
+}
+
+/* Frozen */
+.frozen::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M0 0 L100 100" stroke="rgba(147, 197, 253, 0.8)" stroke-width="2"/></svg>');
+    background-color: rgba(59, 130, 246, 0.3);
+    border-radius: inherit;
+    pointer-events: none;
+    backdrop-filter: blur(1px);
+    z-index: 10;
+}
+
+/* Taunt (Shield Border) */
+.taunt {
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px #334155, 0 0 15px rgba(0,0,0,0.5);
+    border-radius: 8px; /* Less round than normal minions */
+}
+
+/* Divine Shield */
+.divine-shield::before {
     content: '';
     position: absolute;
     inset: -4px;
+    border: 2px solid #fcd34d;
     border-radius: 50%;
-    background: linear-gradient(45deg, #8b5cf6, #6366f1, #8b5cf6);
-    z-index: -1;
-    animation: rotate-glow 3s linear infinite;
+    background: rgba(251, 191, 36, 0.2);
+    box-shadow: 0 0 15px #fbbf24;
+    animation: shield-shimmer 2s infinite linear;
+    z-index: 15;
+    pointer-events: none;
 }
 
-.hero-info {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+/* ============================================
+   ANIMATIONS (The Juice)
+   ============================================ */
 
-.hero-taking-damage .hero-avatar {
-    animation: hero-damage 0.5s ease;
-}
-
-/* === HERO POWER BUTTON === */
-.hero-power {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
-    border: 3px solid #a855f7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    font-size: 32px;
-}
-
-.hero-power:hover:not(.disabled) {
-    transform: scale(1.1);
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
-}
-
-.hero-power.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    filter: grayscale(1);
-}
-
-.hero-power.available {
-    animation: power-pulse 2s ease-in-out infinite;
-}
-
-/* === MANA CRYSTAL === */
-.mana-crystal {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #1e40af);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 2px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3),
-                0 0 10px rgba(59, 130, 246, 0.4);
-}
-
-.mana-crystal.empty {
-    background: linear-gradient(135deg, #475569, #334155);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* === HEALTH/ATTACK BADGES === */
-.stat-badge {
-    min-width: 36px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 16px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    flex-shrink: 0;
-}
-
-.attack-badge {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: 2px solid #fca5a5;
-}
-
-.health-badge {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: white;
-    border: 2px solid #86efac;
-}
-
-.armor-badge {
-    background: linear-gradient(135deg, #64748b, #475569);
-    color: white;
-    border: 2px solid #cbd5e1;
-}
-
-/* === CARD TYPE BADGES === */
-.type-badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.type-minion {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    color: white;
-}
-
-.type-spell {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-    color: white;
-}
-
-.type-weapon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-}
-
-/* === ANIMATIONS === */
-
-/* Legendary pulse */
+/* Legendary Pulse */
 @keyframes legendary-pulse {
-    0%, 100% {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                    0 0 20px rgba(245, 158, 11, 0.4);
-    }
-    50% {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 
-                    0 0 40px rgba(245, 158, 11, 0.7);
-    }
+    0% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.8); border-color: #fcd34d; }
+    100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
 }
 
-/* Rotating glow effect */
-@keyframes rotate-glow {
-    0% {
-        filter: blur(8px) hue-rotate(0deg);
-    }
-    100% {
-        filter: blur(8px) hue-rotate(360deg);
-    }
+/* Targeting Pulses */
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 2px #22c55e, 0 0 10px #22c55e; }
+    50% { box-shadow: 0 0 0 6px #4ade80, 0 0 20px #4ade80; }
+    100% { box-shadow: 0 0 0 2px #22c55e, 0 0 10px #22c55e; }
 }
 
-/* Can attack pulse */
-@keyframes can-attack-pulse {
-    0%, 100% {
-        border-color: #22c55e;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
-                    0 0 20px rgba(34, 197, 94, 0.4);
-    }
-    50% {
-        border-color: #4ade80;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
-                    0 0 30px rgba(34, 197, 94, 0.7);
-    }
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 2px #ef4444, 0 0 10px #ef4444; }
+    50% { box-shadow: 0 0 0 6px #f87171, 0 0 20px #f87171; }
+    100% { box-shadow: 0 0 0 2px #ef4444, 0 0 10px #ef4444; }
 }
 
-/* Attack animation */
-@keyframes attack-shake {
-    0%, 100% {
-        transform: translateX(0) scale(1);
-    }
-    25% {
-        transform: translateX(-10px) scale(1.1);
-    }
-    75% {
-        transform: translateX(10px) scale(1.1);
-    }
+/* Combat: Attack Lunge */
+@keyframes attack-lunge-up {
+    0% { transform: translateY(0) scale(1); }
+    40% { transform: translateY(20px) scale(0.9); } /* Wind up */
+    100% { transform: translateY(-150px) scale(1.2); } /* Strike */
 }
 
-/* Damage shake */
-@keyframes damage-shake {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    10%, 30%, 50%, 70%, 90% {
-        transform: translateX(-5px);
-    }
-    20%, 40%, 60%, 80% {
-        transform: translateX(5px);
-    }
+@keyframes attack-lunge-down {
+    0% { transform: translateY(0) scale(1); }
+    40% { transform: translateY(-20px) scale(0.9); }
+    100% { transform: translateY(150px) scale(1.2); }
 }
 
-/* Hero damage animation */
-@keyframes hero-damage {
-    0%, 100% {
-        transform: scale(1);
-        filter: brightness(1);
-    }
-    25% {
-        transform: scale(0.95);
-        filter: brightness(1.5) hue-rotate(20deg);
-    }
-    50% {
-        transform: scale(1.05);
-        filter: brightness(0.8) hue-rotate(-20deg);
-    }
-    75% {
-        transform: scale(0.98);
-        filter: brightness(1.3);
-    }
+/* Combat: Taking Damage */
+@keyframes shake-damage {
+    0%, 100% { transform: translateX(0); filter: brightness(1); }
+    20% { transform: translateX(-10px) rotate(-5deg); filter: brightness(2) saturate(0); } /* Flash white */
+    40% { transform: translateX(10px) rotate(5deg); }
+    60% { transform: translateX(-10px); }
+    80% { transform: translateX(10px); }
+}
+.animate-shake {
+    animation: shake-damage 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-/* Hero power pulse */
-@keyframes power-pulse {
-    0%, 100% {
-        box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
-    }
-    50% {
-        box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
-    }
+/* Turn Timer Fuse */
+@keyframes burn-fuse {
+    0% { width: 100%; background-color: #4ade80; }
+    70% { background-color: #facc15; }
+    100% { width: 0%; background-color: #ef4444; }
+}
+.animate-shrink {
+    animation: burn-fuse 60s linear forwards;
 }
 
-/* Card draw animation */
-@keyframes card-draw {
-    0% {
-        transform: translateY(100px) scale(0.5);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
+/* Fade In Down (UI Entrance) */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-down {
+    animation: fadeInDown 0.8s ease-out forwards;
 }
 
-/* Card play animation */
-@keyframes card-play {
-    0% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: translateY(-100px) scale(1.2);
-        opacity: 0.8;
-    }
-    100% {
-        transform: translateY(-200px) scale(0.5);
-        opacity: 0;
-    }
+/* ============================================
+   UI ELEMENTS
+   ============================================ */
+
+/* Menu Buttons */
+.menu-btn {
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
 }
 
-/* Minion summon animation */
-@keyframes minion-summon {
-    0% {
-        transform: scale(0) rotate(-180deg);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.2) rotate(20deg);
-    }
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-}
-
-/* Death animation */
-@keyframes death-fade {
-    0% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.2) rotate(10deg);
-        opacity: 0.5;
-    }
-    100% {
-        transform: scale(0) rotate(180deg);
-        opacity: 0;
-    }
-}
-
-/* Spell cast animation */
-@keyframes spell-cast {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.5);
-        opacity: 0.5;
-        filter: brightness(2);
-    }
-    100% {
-        transform: scale(2);
-        opacity: 0;
-    }
-}
-
-/* Heal effect */
-@keyframes heal-pulse {
-    0%, 100% {
-        transform: scale(1);
-        filter: brightness(1);
-    }
-    50% {
-        transform: scale(1.1);
-        filter: brightness(1.5) hue-rotate(120deg);
-    }
-}
-
-/* Shield/Taunt effect */
-@keyframes shield-glow {
-    0%, 100% {
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
-                    inset 0 0 10px rgba(59, 130, 246, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(59, 130, 246, 0.8),
-                    inset 0 0 15px rgba(59, 130, 246, 0.5);
-    }
-}
-
-/* Buff effect */
-@keyframes buff-glow {
-    0%, 100% {
-        box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(34, 197, 94, 0.8);
-    }
-}
-
-/* Debuff effect */
-@keyframes debuff-glow {
-    0%, 100% {
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
-    }
-}
-
-/* === UTILITY ANIMATION CLASSES === */
-.animate-draw {
-    animation: card-draw 0.5s ease-out;
-}
-
-.animate-play {
-    animation: card-play 0.6s ease-in;
-}
-
-.animate-summon {
-    animation: minion-summon 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.animate-death {
-    animation: death-fade 0.8s ease-out forwards;
-}
-
-.animate-spell {
-    animation: spell-cast 0.8s ease-out;
-}
-
-.animate-heal {
-    animation: heal-pulse 0.6s ease-out;
-}
-
-.animate-shield {
-    animation: shield-glow 1.5s ease-in-out infinite;
-}
-
-.animate-buff {
-    animation: buff-glow 1.5s ease-in-out infinite;
-}
-
-.animate-debuff {
-    animation: debuff-glow 1.5s ease-in-out infinite;
-}
-
-/* === PARTICLE EFFECTS === */
-.particle {
-    position: absolute;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-.damage-text {
-    position: absolute;
-    font-size: 32px;
-    font-weight: bold;
-    color: #ef4444;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    animation: damage-float 1s ease-out forwards;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-@keyframes damage-float {
-    0% {
-        transform: translateY(0) scale(0.5);
-        opacity: 0;
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(-20px) scale(1.2);
-    }
-    100% {
-        transform: translateY(-100px) scale(1);
-        opacity: 0;
-    }
-}
-
-.heal-text {
-    position: absolute;
-    font-size: 32px;
-    font-weight: bold;
-    color: #22c55e;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    animation: damage-float 1s ease-out forwards;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-/* === TARGET INDICATOR === */
-.target-arrow {
-    position: absolute;
-    width: 4px;
+/* Hero Portrait Frame */
+.hero-portrait-frame {
+    width: 100px;
     height: 100px;
-    background: linear-gradient(180deg, #ef4444 0%, transparent 100%);
-    transform-origin: top center;
+    border-radius: 50%;
+    position: relative;
+    background: #1e293b;
+    border: 4px solid #94a3b8;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.hero-portrait-frame:hover {
+    transform: scale(1.05);
+    border-color: #fbbf24;
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+}
+
+.hero-portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Floating Damage Numbers */
+.damage-number {
+    position: absolute;
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 2.5rem;
+    color: #ef4444;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
     pointer-events: none;
-    z-index: 999;
+    z-index: var(--z-vfx);
+    animation: float-up-fade 1.5s ease-out forwards;
 }
 
-.target-indicator {
-    border: 3px solid #ef4444;
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
-    animation: target-pulse 0.5s ease-in-out infinite;
+@keyframes float-up-fade {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -100%) scale(1.5); opacity: 1; }
+    100% { transform: translate(-50%, -200%) scale(1); opacity: 0; }
 }
 
-@keyframes target-pulse {
-    0%, 100% {
-        border-color: #ef4444;
-        box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
-    }
-    50% {
-        border-color: #fca5a5;
-        box-shadow: 0 0 30px rgba(239, 68, 68, 1);
-    }
-}
-
-/* === QUEST STYLES === */
-.quest-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-left: 4px solid #f59e0b;
+/* Mana Crystal Styles */
+.mana-crystal {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 2px;
+    box-shadow: 0 0 5px #3b82f6;
+    transform: rotate(45deg);
     transition: all 0.3s ease;
 }
-
-.quest-card:hover {
-    transform: translateX(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                -4px 0 20px rgba(245, 158, 11, 0.3);
-}
-
-.quest-progress-bar {
-    height: 8px;
-    background: #334155;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.quest-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #f59e0b, #eab308);
-    transition: width 0.5s ease;
-}
-
-/* === DECK BUILDER CARD MINI === */
-.deck-card-mini {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
+.mana-crystal.empty {
     background: #1e293b;
-    border-radius: 8px;
-    border-left: 3px solid #8b5cf6;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    box-shadow: none;
+    border: 1px solid #475569;
 }
 
-.deck-card-mini:hover {
-    background: #334155;
-    transform: translateX(4px);
-}
-
-/* === HOVER CARD PREVIEW === */
-.card-preview {
-    position: fixed;
-    z-index: 1000;
-    pointer-events: none;
-    transform: scale(1.5);
-    transition: all 0.2s ease;
-}
-
-/* === RESPONSIVE ADJUSTMENTS === */
-@media (max-width: 1536px) {
-    .card {
-        width: 160px;
-        height: 220px;
+/* ============================================
+   RESPONSIVE TWEAKS
+   ============================================ */
+@media (max-width: 768px) {
+    :root {
+        --card-width: 100px;
+        --card-height: 140px;
+    }
+    
+    #playerHand {
+        padding-bottom: 50px;
     }
     
     .minion-card {
-        width: 120px;
-        height: 160px;
+        width: 70px;
+        height: 90px;
     }
-}
-
-/* === LOADING SPINNER === */
-.spinner {
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(139, 92, 246, 0.2);
-    border-top-color: #8b5cf6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* === BUTTON EFFECTS === */
-.btn-glow {
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-glow::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn-glow:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-/* === TOOLTIP STYLES === */
-.tooltip {
-    position: absolute;
-    background: rgba(15, 23, 42, 0.98);
-    color: white;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 1001;
-    max-width: 300px;
-    border: 2px solid rgba(139, 92, 246, 0.6);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-}
-
-.tooltip::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid rgba(15, 23, 42, 0.98);
-}
-
-.card-tooltip {
-    position: fixed;
-    z-index: 2000;
-    pointer-events: none;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(139, 92, 246, 0.5);
-    border: 3px solid #8b5cf6;
-    min-width: 250px;
-    max-width: 350px;
 }

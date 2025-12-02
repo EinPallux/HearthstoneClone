@@ -2,320 +2,407 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcane Legends - Card Battle Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Arcane Legends - A Strategic Card Battle Game">
+    <title>Arcane Legends</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Cinzel for headings, Montserrat for UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
     
-    <style>
-        /* Tailwind config for custom colors */
-        @layer utilities {
-            .text-shadow-glow {
-                text-shadow: 0 0 20px currentColor;
+    <!-- Tailwind Config for Custom Colors/Effects -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'mana-blue': '#2563eb',
+                        'health-red': '#ef4444',
+                        'attack-yellow': '#eab308',
+                        'rarity-common': '#94a3b8',
+                        'rarity-rare': '#3b82f6',
+                        'rarity-epic': '#a855f7',
+                        'rarity-legendary': '#f59e0b',
+                        'card-bg': '#1e293b',
+                    },
+                    fontFamily: {
+                        'cinzel': ['Cinzel', 'serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(255, 255, 255, 0.3)',
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                    }
+                }
             }
         }
-    </style>
+    </script>
 </head>
-<body class="bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 min-h-screen overflow-hidden">
-    
-    <!-- MAIN MENU / LANDING PAGE -->
-    <div id="mainMenu" class="fixed inset-0 z-50 flex items-center justify-center">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-8">
-            <!-- Title -->
-            <div class="text-center mb-12">
-                <h1 class="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 mb-4 text-shadow-glow" style="font-family: 'Cinzel', serif;">
-                    ARCANE LEGENDS
-                </h1>
-                <p class="text-2xl text-purple-200" style="font-family: 'Montserrat', sans-serif;">
-                    Master the Cards. Conquer the Arena.
-                </p>
-            </div>
+<body class="bg-gray-900 text-white overflow-hidden select-none h-screen w-screen m-0 p-0">
 
-            <!-- Main Menu Buttons -->
-            <div id="menuButtons" class="flex flex-col items-center space-y-6">
-                <button id="btnSelectHero" class="menu-btn w-96 py-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-purple-500/50">
-                    Select Hero
-                </button>
-                <button id="btnDeckBuilder" class="menu-btn w-96 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-amber-500/50">
-                    Deck Builder
-                </button>
-                <button id="btnQuests" class="menu-btn w-96 py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-green-500/50">
-                    Quests
-                </button>
-                <button id="btnStartGame" class="menu-btn w-96 py-5 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-red-500/50">
-                    Start Battle
-                </button>
-            </div>
-        </div>
+    <!-- AUDIO SYSTEM -->
+    <div id="audioContainer" class="hidden">
+        <audio id="bgm-menu" loop preload="auto"><source src="assets/audio/menu_theme.mp3" type="audio/mp3"></audio>
+        <audio id="bgm-battle" loop preload="auto"><source src="assets/audio/battle_theme.mp3" type="audio/mp3"></audio>
+        <audio id="sfx-hover" preload="auto"><source src="assets/audio/hover.mp3" type="audio/mp3"></audio>
+        <audio id="sfx-click" preload="auto"><source src="assets/audio/click.mp3" type="audio/mp3"></audio>
+        <audio id="sfx-draw" preload="auto"><source src="assets/audio/card_draw.mp3" type="audio/mp3"></audio>
+        <audio id="sfx-play" preload="auto"><source src="assets/audio/card_play.mp3" type="audio/mp3"></audio>
     </div>
 
-    <!-- HERO SELECTION SCREEN -->
-    <div id="heroSelection" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900"></div>
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="relative w-full h-full bg-slate-950">
         
-        <div class="relative z-10 h-full flex flex-col p-8">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <h2 class="text-6xl font-bold text-amber-400 mb-4" style="font-family: 'Cinzel', serif;">Choose Your Champion</h2>
-                <p class="text-xl text-purple-200">Each hero has unique abilities and playstyles</p>
-            </div>
-
-            <!-- Hero Grid -->
-            <div id="heroGrid" class="flex-1 grid grid-cols-5 gap-6 px-12">
-                <!-- Heroes will be dynamically inserted here -->
-            </div>
-
-            <!-- Back Button -->
-            <div class="text-center mt-8">
-                <button id="btnBackFromHero" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
-                    Back to Menu
-                </button>
-            </div>
+        <!-- LAYER 1: DYNAMIC BACKGROUND -->
+        <div id="background-layer" class="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 opacity-50" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2568&auto=format&fit=crop');">
+            <div class="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-900/60 to-slate-950/90"></div>
+            <div class="absolute inset-0 bg-[url('assets/pattern.png')] opacity-10"></div>
         </div>
-    </div>
 
-    <!-- DECK BUILDER SCREEN -->
-    <div id="deckBuilder" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900"></div>
-        
-        <div class="relative z-10 h-full flex flex-col p-6">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-5xl font-bold text-amber-400" style="font-family: 'Cinzel', serif;">Deck Builder</h2>
-                <div class="flex gap-4">
-                    <button id="btnSuggestDeck" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
-                        ✨ AI Suggest Deck
+        <!-- LAYER 2: GAME SCREENS -->
+        <div id="screens-layer" class="relative z-10 w-full h-full">
+
+            <!-- SCREEN: MAIN MENU -->
+            <div id="mainMenu" class="absolute inset-0 flex flex-col items-center justify-center z-20 transition-opacity duration-500">
+                <div class="text-center mb-12 animate-fade-in-down">
+                    <h1 class="text-7xl md:text-9xl font-cinzel font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] filter">
+                        ARCANE<br>LEGENDS
+                    </h1>
+                    <div class="h-1 w-64 mx-auto bg-gradient-to-r from-transparent via-amber-500 to-transparent my-6"></div>
+                    <p class="text-xl text-blue-200 font-montserrat tracking-widest uppercase">The Ultimate Card Battle</p>
+                </div>
+
+                <div id="menuButtons" class="flex flex-col gap-6 w-full max-w-md px-4">
+                    <button id="btnStartGame" class="menu-btn group relative px-8 py-5 bg-gradient-to-r from-red-800 to-red-600 rounded-lg border-2 border-red-400/30 shadow-lg transform transition-all hover:scale-105 hover:shadow-red-500/20">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                        <span class="font-cinzel font-bold text-2xl text-white drop-shadow-md">Play Game</span>
                     </button>
-                    <button id="btnPreBuiltDecks" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
-                        📚 Pre-Built Decks
+                    
+                    <button id="btnSelectHero" class="menu-btn group relative px-8 py-4 bg-slate-800/80 rounded-lg border border-slate-600 hover:bg-slate-700 transition-all hover:border-blue-400">
+                        <span class="font-cinzel font-bold text-xl text-blue-100">Heroes</span>
                     </button>
-                    <button id="btnBackFromDeck" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
-                        Back
+                    
+                    <button id="btnDeckBuilder" class="menu-btn group relative px-8 py-4 bg-slate-800/80 rounded-lg border border-slate-600 hover:bg-slate-700 transition-all hover:border-amber-400">
+                        <span class="font-cinzel font-bold text-xl text-amber-100">Collection</span>
                     </button>
+                    
+                    <button id="btnQuests" class="menu-btn group relative px-8 py-4 bg-slate-800/80 rounded-lg border border-slate-600 hover:bg-slate-700 transition-all hover:border-green-400">
+                        <span class="font-cinzel font-bold text-xl text-green-100">Quests</span>
+                    </button>
+                </div>
+                
+                <div class="absolute bottom-8 text-slate-500 text-sm font-montserrat">
+                    v1.0.0 Alpha • Created by Einpallux
                 </div>
             </div>
 
-            <div class="flex-1 flex gap-6">
-                <!-- Card Collection (Left Side) -->
-                <div class="flex-1 bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm overflow-hidden flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-2xl font-bold text-white">Card Collection</h3>
-                        <div class="flex gap-2">
-                            <select id="filterCost" class="px-4 py-2 bg-slate-700 text-white rounded-lg">
-                                <option value="all">All Costs</option>
-                                <option value="0-2">0-2 Mana</option>
-                                <option value="3-4">3-4 Mana</option>
-                                <option value="5-6">5-6 Mana</option>
-                                <option value="7+">7+ Mana</option>
+            <!-- SCREEN: HERO SELECTION -->
+            <div id="heroSelection" class="absolute inset-0 z-20 hidden bg-slate-900/95 backdrop-blur-md flex flex-col p-8 transition-opacity duration-300">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-4xl font-cinzel text-amber-400">Select Your Champion</h2>
+                    <button id="btnBackFromHero" class="px-6 py-2 rounded-full border border-slate-600 hover:bg-slate-800 text-slate-300 transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Back
+                    </button>
+                </div>
+                <div id="heroGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-y-auto pr-4 pb-20 custom-scrollbar">
+                    <!-- Heroes injected by JS -->
+                </div>
+            </div>
+
+            <!-- SCREEN: DECK BUILDER -->
+            <div id="deckBuilder" class="absolute inset-0 z-20 hidden bg-slate-900/95 backdrop-blur-xl flex flex-col transition-opacity duration-300">
+                <div class="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-900/50">
+                    <div>
+                        <h2 class="text-3xl font-cinzel text-amber-400">Deck Forge</h2>
+                        <p class="text-slate-400 text-sm">Build your ultimate deck</p>
+                    </div>
+                    <div class="flex gap-4">
+                         <div class="flex bg-slate-800 rounded-lg p-1">
+                            <button id="btnSuggestDeck" class="px-4 py-2 hover:bg-slate-700 rounded text-sm text-purple-300 transition-colors"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Auto-Fill</button>
+                            <button id="btnPreBuiltDecks" class="px-4 py-2 hover:bg-slate-700 rounded text-sm text-blue-300 transition-colors"><i class="fa-solid fa-book mr-2"></i>Recipes</button>
+                        </div>
+                        <button id="btnBackFromDeck" class="px-6 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-600">
+                            Done
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex overflow-hidden">
+                    <!-- Collection View -->
+                    <div class="flex-1 flex flex-col p-6 bg-slate-900/30">
+                        <div class="flex gap-4 mb-6">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                                <input type="text" placeholder="Search cards..." class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-amber-500 outline-none">
+                            </div>
+                            <select id="filterCost" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none cursor-pointer hover:border-slate-500">
+                                <option value="all">Mana: All</option>
+                                <option value="0-2">0-2</option>
+                                <option value="3-4">3-4</option>
+                                <option value="5-6">5-6</option>
+                                <option value="7+">7+</option>
                             </select>
-                            <select id="filterType" class="px-4 py-2 bg-slate-700 text-white rounded-lg">
-                                <option value="all">All Types</option>
+                            <select id="filterType" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none cursor-pointer hover:border-slate-500">
+                                <option value="all">Type: All</option>
                                 <option value="minion">Minions</option>
                                 <option value="spell">Spells</option>
                                 <option value="weapon">Weapons</option>
                             </select>
                         </div>
+                        
+                        <div id="cardCollection" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-20">
+                            <!-- Cards injected JS -->
+                        </div>
                     </div>
-                    <div id="cardCollection" class="grid grid-cols-4 gap-4 overflow-y-auto flex-1 pr-2" style="max-height: calc(100vh - 300px);">
-                        <!-- Cards will be dynamically inserted here -->
+
+                    <!-- Deck Sidebar -->
+                    <div class="w-80 bg-slate-950 border-l border-slate-800 flex flex-col shadow-2xl z-10">
+                        <div class="p-4 bg-slate-900 border-b border-slate-800">
+                            <input id="deckName" type="text" value="New Deck" class="w-full bg-transparent text-xl font-cinzel font-bold text-white border-b border-transparent hover:border-slate-600 focus:border-amber-500 outline-none px-2 py-1 text-center mb-2">
+                            <div class="flex justify-between items-center bg-slate-800 rounded-full px-4 py-1">
+                                <span class="text-xs text-slate-400 uppercase tracking-wider font-bold">Cards</span>
+                                <span id="deckCount" class="font-mono font-bold text-amber-400">0/25</span>
+                            </div>
+                        </div>
+                        
+                        <div id="currentDeck" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                            <!-- Deck slots -->
+                        </div>
+                        
+                        <div class="p-4 border-t border-slate-800 bg-slate-900">
+                            <button id="btnSaveDeck" class="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold rounded-lg shadow-lg transition-all transform active:scale-95">
+                                <i class="fa-solid fa-save mr-2"></i> SAVE DECK
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Current Deck (Right Side) -->
-                <div class="w-96 bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm overflow-hidden flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-2xl font-bold text-white">Current Deck</h3>
-                        <span id="deckCount" class="text-xl font-bold text-amber-400">0/25</span>
+            <!-- SCREEN: QUESTS -->
+            <div id="questsScreen" class="absolute inset-0 z-20 hidden bg-slate-900/95 backdrop-blur-md flex flex-col p-8">
+                <div class="max-w-4xl mx-auto w-full h-full flex flex-col">
+                    <div class="text-center mb-10">
+                        <h2 class="text-4xl font-cinzel text-amber-400 mb-2">Quest Log</h2>
+                        <p class="text-slate-400">Complete tasks to earn gold and glory</p>
                     </div>
-                    <div class="mb-4">
-                        <input id="deckName" type="text" placeholder="Deck Name" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg border-2 border-slate-600 focus:border-amber-400 outline-none">
+                    
+                    <div id="questList" class="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-4">
+                        <!-- Quests injected by JS -->
                     </div>
-                    <div id="currentDeck" class="overflow-y-auto flex-1 space-y-2 mb-4" style="max-height: calc(100vh - 400px);">
-                        <!-- Selected cards will appear here -->
+                    
+                    <div class="mt-8 text-center">
+                        <button id="btnBackFromQuests" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-cinzel font-bold rounded-lg border border-slate-600 transition-all">
+                            Back to Menu
+                        </button>
                     </div>
-                    <button id="btnSaveDeck" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
-                        Save Deck
-                    </button>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- QUESTS SCREEN -->
-    <div id="questsScreen" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-green-900 to-slate-900"></div>
-        
-        <div class="relative z-10 h-full flex flex-col p-8">
-            <div class="text-center mb-8">
-                <h2 class="text-6xl font-bold text-amber-400 mb-4" style="font-family: 'Cinzel', serif;">Quest Log</h2>
-                <p class="text-xl text-purple-200">Complete quests to earn rewards</p>
+            <!-- SCREEN: DIFFICULTY SELECT -->
+            <div id="difficultySelection" class="absolute inset-0 z-20 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center">
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-lg w-full shadow-2xl transform transition-all scale-100">
+                    <h2 class="text-3xl font-cinzel text-center text-white mb-8">Select Difficulty</h2>
+                    
+                    <div class="space-y-4">
+                        <button class="difficulty-btn w-full p-4 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-green-900 hover:to-green-800 border border-slate-600 hover:border-green-500 rounded-xl transition-all group" data-difficulty="easy">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🌱</div>
+                                <div class="ml-4 text-left">
+                                    <div class="text-lg font-bold text-white group-hover:text-green-300">Novice</div>
+                                    <div class="text-xs text-slate-400">Perfect for learning the ropes</div>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button class="difficulty-btn w-full p-4 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-amber-900 hover:to-amber-800 border border-slate-600 hover:border-amber-500 rounded-xl transition-all group" data-difficulty="medium">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">⚔️</div>
+                                <div class="ml-4 text-left">
+                                    <div class="text-lg font-bold text-white group-hover:text-amber-300">Warrior</div>
+                                    <div class="text-xs text-slate-400">A balanced challenge</div>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button class="difficulty-btn w-full p-4 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-red-900 hover:to-red-800 border border-slate-600 hover:border-red-500 rounded-xl transition-all group" data-difficulty="hard">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🔥</div>
+                                <div class="ml-4 text-left">
+                                    <div class="text-lg font-bold text-white group-hover:text-red-300">Legend</div>
+                                    <div class="text-xs text-slate-400">Unforgiving AI strategy</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button id="btnBackFromDifficulty" class="mt-8 w-full py-3 text-slate-400 hover:text-white transition-colors">Cancel</button>
+                </div>
             </div>
 
-            <div id="questList" class="flex-1 max-w-4xl mx-auto w-full space-y-4 overflow-y-auto">
-                <!-- Quests will be dynamically inserted here -->
-            </div>
-
-            <div class="text-center mt-8">
-                <button id="btnBackFromQuests" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
-                    Back to Menu
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DIFFICULTY SELECTION -->
-    <div id="difficultySelection" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        
-        <div class="relative z-10 flex items-center justify-center h-full">
-            <div class="bg-slate-800 rounded-2xl p-12 max-w-2xl">
-                <h2 class="text-5xl font-bold text-amber-400 mb-8 text-center" style="font-family: 'Cinzel', serif;">Select Difficulty</h2>
+            <!-- SCREEN: GAME BOARD (THE MAIN ARENA) -->
+            <div id="gameBoard" class="absolute inset-0 z-10 hidden flex flex-col overflow-hidden bg-slate-900">
                 
-                <div class="space-y-6">
-                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="easy">
-                        <div>🌱 Easy</div>
-                        <div class="text-sm font-normal mt-2">Casual gameplay for beginners</div>
-                    </button>
-                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="medium">
-                        <div>⚔️ Medium</div>
-                        <div class="text-sm font-normal mt-2">Balanced challenge for experienced players</div>
-                    </button>
-                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="hard">
-                        <div>🔥 Hard</div>
-                        <div class="text-sm font-normal mt-2">Ultimate challenge for masters</div>
-                    </button>
-                </div>
-
-                <button id="btnBackFromDifficulty" class="w-full mt-8 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
-                    Back
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- GAME BOARD -->
-    <div id="gameBoard" class="fixed inset-0 z-40 hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900"></div>
-        
-        <div class="relative z-10 h-full flex flex-col">
-            <!-- Top Bar -->
-            <div class="flex justify-between items-center p-4 bg-slate-900/80 backdrop-blur-sm">
-                <button id="btnSurrender" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
-                    Surrender
-                </button>
-                <div id="turnIndicator" class="text-3xl font-bold text-amber-400" style="font-family: 'Cinzel', serif;">
-                    YOUR TURN
-                </div>
-                <button id="btnEndTurn" class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white text-xl font-bold rounded-lg shadow-xl transition-all duration-300 hover:scale-105">
-                    End Turn
-                </button>
-            </div>
-
-            <!-- Enemy Area -->
-            <div class="flex-shrink-0 p-3">
-                <!-- Enemy Hero -->
-                <div class="flex justify-center mb-3">
-                    <div id="enemyHero" class="hero-portrait bg-slate-800 rounded-xl p-4 shadow-2xl border-4 border-red-500 cursor-pointer hover:scale-105 transition-transform">
-                        <!-- Hero details will be inserted here -->
+                <!-- TOP BAR: ENEMY INFO -->
+                <div class="h-[25%] relative bg-gradient-to-b from-slate-900 to-slate-800/80 border-b border-slate-700/30">
+                    <!-- Enemy Hand (Hidden cards) -->
+                    <div id="enemyHand" class="absolute -top-12 left-1/2 transform -translate-x-1/2 flex justify-center gap-[-40px] perspective-1000 z-10">
+                        <!-- Enemy cards injected here -->
                     </div>
-                </div>
 
-                <!-- Enemy Board -->
-                <div id="enemyBoard" class="flex justify-center gap-3 min-h-[160px] p-3 bg-red-900/20 rounded-xl border-2 border-red-500/30">
-                    <!-- Enemy minions will appear here -->
-                </div>
-            </div>
-
-            <!-- Middle Section -->
-            <div class="flex-1 flex items-center justify-center py-2">
-                <div id="battleLog" class="bg-slate-900/50 backdrop-blur-sm rounded-xl p-4 w-96 h-40 overflow-y-auto">
-                    <div class="text-amber-400 text-sm space-y-1">
-                        <!-- Battle log messages will appear here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player Area -->
-            <div class="flex-shrink-0 p-3">
-                <!-- Player Board -->
-                <div id="playerBoard" class="flex justify-center gap-3 min-h-[160px] p-3 bg-blue-900/20 rounded-xl border-2 border-blue-500/30 mb-3">
-                    <!-- Player minions will appear here -->
-                </div>
-
-                <!-- Player Hero -->
-                <div class="flex justify-center mb-3">
-                    <div id="playerHero" class="hero-portrait bg-slate-800 rounded-xl p-4 shadow-2xl border-4 border-blue-500">
-                        <!-- Hero details will be inserted here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Player Hand -->
-            <div class="flex-shrink-0 bg-slate-900/80 backdrop-blur-sm p-4 pb-8">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex items-center gap-4">
-                        <div id="manaDisplay" class="text-2xl font-bold text-blue-400">
-                            <span id="currentMana">0</span>/<span id="maxMana">0</span> 💎
+                    <!-- Enemy Hero Zone -->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-20">
+                        <div id="enemyHero" class="relative group">
+                            <!-- Hero Portrait injected -->
                         </div>
-                        <div id="deckCount" class="text-lg text-purple-300">
-                            Deck: <span id="remainingCards">25</span>
+                        <!-- Enemy Mana -->
+                        <div class="mt-2 flex items-center gap-1 bg-black/40 px-3 py-1 rounded-full border border-slate-700">
+                            <div class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]"></div>
+                            <span id="enemyManaText" class="text-xs font-mono font-bold text-blue-200">1/1</span>
                         </div>
                     </div>
-                    <div id="heroPowerBtn" class="cursor-pointer">
-                        <!-- Hero power button will be inserted here -->
+
+                    <!-- Top UI -->
+                    <div class="absolute top-4 right-4 z-30">
+                        <button id="btnSurrender" class="px-4 py-1 text-xs bg-red-900/30 hover:bg-red-900/60 border border-red-800/50 text-red-200 rounded uppercase tracking-wider transition-colors">
+                            Surrender
+                        </button>
                     </div>
                 </div>
-                <div id="playerHand" class="flex justify-center gap-2 min-h-[230px] pb-4">
-                    <!-- Player hand cards will appear here -->
+
+                <!-- MIDDLE: BATTLEFIELD -->
+                <div class="flex-1 relative flex flex-col justify-center items-center perspective-1000">
+                    
+                    <!-- Board Divider / Line -->
+                    <div class="absolute w-full h-[2px] bg-slate-700/20 top-1/2 left-0 z-0"></div>
+
+                    <!-- Enemy Minions -->
+                    <div id="enemyBoard" class="w-full max-w-5xl h-[160px] flex justify-center items-end gap-2 mb-2 z-10 px-4">
+                        <!-- Minions injected here -->
+                    </div>
+
+                    <!-- Player Minions -->
+                    <div id="playerBoard" class="w-full max-w-5xl h-[160px] flex justify-center items-start gap-2 mt-2 z-10 px-4">
+                        <!-- Minions injected here -->
+                    </div>
+
+                    <!-- Battle Log (Floating Sidebar) -->
+                    <div id="battleLogContainer" class="absolute left-0 top-1/2 transform -translate-y-1/2 w-64 h-48 pointer-events-none opacity-0 hover:opacity-100 transition-opacity duration-300 ml-4 z-20">
+                        <div id="battleLog" class="w-full h-full bg-black/50 backdrop-blur-sm rounded-lg p-2 overflow-y-auto text-xs font-mono text-slate-300 shadow-xl border border-slate-700/50 pointer-events-auto">
+                            <!-- Logs -->
+                        </div>
+                    </div>
+
+                    <!-- End Turn Button & Timer -->
+                    <div class="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 flex flex-col items-center">
+                        <button id="btnEndTurn" class="w-24 h-24 rounded-full bg-gradient-to-br from-green-600 to-emerald-800 border-4 border-slate-300 shadow-2xl flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 group">
+                            <span class="font-cinzel font-bold text-white text-sm text-center leading-tight drop-shadow-md group-hover:text-green-100">END<br>TURN</span>
+                        </button>
+                        <div id="turnTimer" class="mt-2 h-1 w-20 bg-slate-700 rounded-full overflow-hidden hidden">
+                            <div class="h-full bg-white animate-shrink"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM: PLAYER INFO -->
+                <div class="h-[30%] relative bg-gradient-to-t from-slate-950 to-slate-900/90 border-t border-slate-700/30 z-20">
+                    
+                    <!-- Player Hero Zone -->
+                    <div class="absolute -top-16 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
+                         <div id="playerHero" class="relative group cursor-pointer transition-transform hover:scale-105">
+                            <!-- Hero Portrait injected -->
+                        </div>
+                    </div>
+
+                    <!-- Hero Power -->
+                    <div id="heroPowerBtn" class="absolute -top-12 left-1/2 transform translate-x-16 ml-12 z-10 transition-transform hover:scale-110">
+                        <!-- Power injected -->
+                    </div>
+                    
+                    <!-- Weapon -->
+                    <div id="playerWeapon" class="absolute -top-12 left-1/2 transform -translate-x-28 ml-[-12px] z-10 transition-transform hover:scale-110">
+                        <!-- Weapon injected -->
+                    </div>
+
+                    <!-- Mana Tray -->
+                    <div class="absolute bottom-4 right-8 flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 shadow-lg z-30">
+                        <div id="manaCrystals" class="flex gap-1">
+                            <!-- Crystals injected -->
+                        </div>
+                        <div class="font-cinzel font-bold text-blue-300 text-xl w-12 text-center">
+                            <span id="currentMana">0</span>/<span id="maxMana">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Deck / Graveyard -->
+                    <div class="absolute bottom-4 left-8 flex gap-4 z-30">
+                        <div class="relative group cursor-pointer">
+                            <div class="w-16 h-20 bg-slate-800 rounded border border-slate-600 shadow-lg flex items-center justify-center bg-[url('assets/card_back.png')] bg-cover"></div>
+                            <div class="absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-md" id="remainingCards">30</div>
+                            <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">Deck</span>
+                        </div>
+                    </div>
+
+                    <!-- Player Hand -->
+                    <div id="playerHand" class="absolute bottom-[-40px] left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-[200px] flex justify-center items-end gap-2 z-40 px-10 pb-12 pointer-events-none">
+                        <!-- Cards injected. Pointer-events-auto added to cards in CSS -->
+                    </div>
+                </div>
+
+                <!-- TURN NOTIFICATION OVERLAY -->
+                <div id="turnIndicator" class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 z-50">
+                    <div class="bg-black/80 backdrop-blur-sm border-y-2 border-amber-500/50 py-4 px-20">
+                        <h2 class="text-6xl font-cinzel font-bold text-white tracking-widest text-shadow-glow">YOUR TURN</h2>
+                    </div>
                 </div>
             </div>
+
+            <!-- SCREEN: END GAME RESULT -->
+            <div id="endGameScreen" class="absolute inset-0 z-50 hidden bg-black/90 flex items-center justify-center opacity-0 transition-opacity duration-1000">
+                <div class="text-center transform scale-90 transition-transform duration-500" id="endGameContent">
+                    <h2 id="endGameTitle" class="text-8xl font-cinzel font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-yellow-600 mb-8 filter drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">
+                        VICTORY
+                    </h2>
+                    <div id="endGameStats" class="bg-slate-900/80 border border-slate-700 p-8 rounded-2xl mb-8 max-w-md mx-auto text-left space-y-2">
+                        <!-- Stats -->
+                    </div>
+                    <div class="flex gap-4 justify-center">
+                        <button id="btnPlayAgain" class="px-8 py-3 bg-green-700 hover:bg-green-600 text-white font-cinzel font-bold rounded shadow-lg transition-transform hover:scale-105">
+                            Play Again
+                        </button>
+                        <button id="btnMainMenu" class="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-cinzel font-bold rounded shadow-lg transition-transform hover:scale-105">
+                            Main Menu
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- LAYER 3: VFX & OVERLAYS -->
+            <div id="fx-layer" class="absolute inset-0 pointer-events-none z-[60] overflow-hidden">
+                <!-- Particles, damage numbers, etc will be appended here -->
+            </div>
+
+            <!-- LAYER 4: LOADING -->
+            <div id="loadingOverlay" class="absolute inset-0 z-[70] hidden bg-black flex items-center justify-center">
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div class="text-amber-500 font-cinzel font-bold tracking-widest animate-pulse">SUMMONING...</div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- Victory/Defeat Screen -->
-    <div id="endGameScreen" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-        <div class="relative z-10 flex items-center justify-center h-full">
-            <div class="bg-slate-800 rounded-2xl p-12 text-center max-w-2xl">
-                <h2 id="endGameTitle" class="text-7xl font-bold mb-8" style="font-family: 'Cinzel', serif;">VICTORY!</h2>
-                <div id="endGameStats" class="text-xl text-purple-200 space-y-2 mb-8">
-                    <!-- Stats will be inserted here -->
-                </div>
-                <div class="flex gap-4 justify-center">
-                    <button id="btnPlayAgain" class="px-12 py-4 bg-green-600 hover:bg-green-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
-                        Play Again
-                    </button>
-                    <button id="btnMainMenu" class="px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
-                        Main Menu
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading/Transition Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 z-[60] hidden">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-        <div class="relative z-10 flex items-center justify-center h-full">
-            <div class="text-center">
-                <div class="text-6xl mb-4">⚔️</div>
-                <div class="text-3xl font-bold text-amber-400 animate-pulse">Loading...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
+    <!-- Scripts (Order Preserved) -->
     <script src="js/data/heroes.js"></script>
     <script src="js/data/cards.js"></script>
     <script src="js/data/quests.js"></script>

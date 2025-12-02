@@ -1,36 +1,50 @@
 /* ============================================
    HEROES DATA
-   Each hero has unique stats, hero power, and starting conditions
+   Each hero has unique stats, hero power, and starting conditions.
    ============================================ */
+
+/**
+ * Helper to generate consistent hero portraits
+ */
+const getHeroPortrait = (id) => {
+    // Using a seeded image service to ensure consistency
+    return `https://picsum.photos/seed/hero_${id}/400/400`;
+};
+
+/**
+ * Helper to generate hero power icons
+ */
+const getHeroPowerIcon = (id) => {
+    return `https://picsum.photos/seed/power_${id}/128/128`;
+};
 
 const HEROES = [
     {
         id: 'pyra',
         name: 'Pyra the Flame Warden',
-        icon: '🔥',
-        description: 'Master of fire magic, burns enemies with continuous damage',
+        title: 'Keeper of the Eternal Flame',
+        description: 'Master of fire magic, burns enemies with continuous damage.',
         startingHealth: 30,
         startingArmor: 0,
+        image: getHeroPortrait('pyra'),
         
         // Hero Power
         heroPower: {
             name: 'Flame Burst',
             cost: 2,
-            icon: '🔥',
-            description: 'Deal 2 damage to a random enemy minion. If none exist, deal 1 damage to the enemy hero.',
+            image: getHeroPowerIcon('pyra'),
+            description: 'Deal 2 damage to a random enemy minion. If none, deal 1 to enemy hero.',
             usesPerTurn: 1,
             
-            // Effect function - called when hero power is used
+            // Effect function
             effect: (game, targetId = null) => {
                 const enemyMinions = game.enemyBoard.filter(m => m !== null);
                 
                 if (enemyMinions.length > 0) {
-                    // Random enemy minion takes 2 damage
                     const randomMinion = enemyMinions[Math.floor(Math.random() * enemyMinions.length)];
                     game.dealDamage(randomMinion, 2, 'ability');
                     game.addBattleLog(`Pyra's Flame Burst deals 2 damage to ${randomMinion.name}!`);
                 } else {
-                    // Deal 1 damage to enemy hero
                     game.enemyHero.currentHealth -= 1;
                     game.addBattleLog(`Pyra's Flame Burst deals 1 damage to enemy hero!`);
                     game.animateDamage(game.enemyHero.id, 1);
@@ -41,21 +55,23 @@ const HEROES = [
         // Passive ability
         passive: {
             name: 'Burning Aura',
-            description: 'At the end of your turn, deal 1 damage to all enemy minions.',
+            description: 'End of turn: Deal 1 damage to all enemy minions.',
             trigger: 'endTurn',
             effect: (game) => {
+                let damageDealt = false;
                 game.enemyBoard.forEach(minion => {
                     if (minion) {
                         game.dealDamage(minion, 1, 'ability');
+                        damageDealt = true;
                     }
                 });
-                if (game.enemyBoard.some(m => m)) {
+                if (damageDealt) {
                     game.addBattleLog('Burning Aura damages all enemy minions!');
                 }
             }
         },
         
-        // Color theme
+        // Visuals
         color: 'from-red-600 to-orange-600',
         borderColor: 'border-red-500'
     },
@@ -63,15 +79,16 @@ const HEROES = [
     {
         id: 'aquos',
         name: 'Aquos the Tide Caller',
-        icon: '🌊',
-        description: 'Controls water to heal and protect allies',
+        title: 'Protector of the Deep',
+        description: 'Controls water to heal and protect allies.',
         startingHealth: 30,
         startingArmor: 0,
+        image: getHeroPortrait('aquos'),
         
         heroPower: {
             name: 'Healing Wave',
             cost: 2,
-            icon: '💧',
+            image: getHeroPowerIcon('aquos'),
             description: 'Restore 3 health to your hero or a friendly minion.',
             usesPerTurn: 1,
             needsTarget: true,
@@ -79,13 +96,11 @@ const HEROES = [
             
             effect: (game, targetId) => {
                 if (targetId === game.playerHero.id) {
-                    // Heal player hero
                     const healAmount = Math.min(3, game.playerHero.maxHealth - game.playerHero.currentHealth);
                     game.playerHero.currentHealth += healAmount;
                     game.addBattleLog(`Healing Wave restores ${healAmount} health!`);
                     game.animateHeal(targetId, healAmount);
                 } else {
-                    // Heal friendly minion
                     const minion = game.playerBoard.find(m => m && m.id === targetId);
                     if (minion) {
                         const healAmount = Math.min(3, minion.maxHealth - minion.currentHealth);
@@ -113,16 +128,17 @@ const HEROES = [
     
     {
         id: 'terra',
-        name: 'Terra the Stone Guardian',
-        icon: '🗿',
-        description: 'Unyielding defender with powerful taunt minions',
+        name: 'Terra Stone Guardian',
+        title: 'The Unyielding Wall',
+        description: 'Unyielding defender with powerful taunt minions.',
         startingHealth: 35,
         startingArmor: 5,
+        image: getHeroPortrait('terra'),
         
         heroPower: {
             name: 'Rock Armor',
             cost: 2,
-            icon: '🛡️',
+            image: getHeroPowerIcon('terra'),
             description: 'Gain 3 armor.',
             usesPerTurn: 1,
             
@@ -151,16 +167,17 @@ const HEROES = [
     
     {
         id: 'zephyr',
-        name: 'Zephyr the Wind Dancer',
-        icon: '💨',
-        description: 'Swift and agile, controls the battlefield with speed',
+        name: 'Zephyr Wind Dancer',
+        title: 'The Swift Blade',
+        description: 'Swift and agile, controls the battlefield with speed.',
         startingHealth: 25,
         startingArmor: 0,
+        image: getHeroPortrait('zephyr'),
         
         heroPower: {
             name: 'Gust',
             cost: 1,
-            icon: '🌪️',
+            image: getHeroPowerIcon('zephyr'),
             description: 'Return a friendly minion to your hand.',
             usesPerTurn: 1,
             needsTarget: true,
@@ -170,11 +187,17 @@ const HEROES = [
                 const boardIndex = game.playerBoard.findIndex(m => m && m.id === targetId);
                 if (boardIndex !== -1) {
                     const minion = game.playerBoard[boardIndex];
-                    
-                    // Return to hand if there's space
                     if (game.playerHand.length < 10) {
-                        game.playerHand.push({...minion, id: Date.now() + Math.random()});
-                        game.playerBoard[boardIndex] = null;
+                        // Create a new card instance to return to hand
+                        // This assumes minion has an 'instanceOf' property pointing to original card ID
+                        // If not, we'd need to lookup by ID logic.
+                        const cardId = minion.instanceOf || minion.id.split('_')[0] || 'wisp'; // Fallback logic
+                        
+                        // We need to re-create the card object for the hand
+                        // This dependency on createCardInstance implies this file might need access to cards.js logic
+                        // OR we assume the game engine handles the 'return to hand' logic.
+                        // For data file purity, we'll define the logic abstractly:
+                        game.returnMinionToHand(boardIndex, 'player');
                         game.addBattleLog(`Gust returns ${minion.name} to your hand!`);
                     } else {
                         game.addBattleLog('Your hand is full!');
@@ -205,38 +228,32 @@ const HEROES = [
     
     {
         id: 'umbra',
-        name: 'Umbra the Shadow Reaper',
-        icon: '🌑',
-        description: 'Manipulates dark energy to drain and control',
+        name: 'Umbra Shadow Reaper',
+        title: 'The Dark Whisper',
+        description: 'Manipulates dark energy to drain and control.',
         startingHealth: 30,
         startingArmor: 0,
+        image: getHeroPortrait('umbra'),
         
         heroPower: {
             name: 'Soul Drain',
             cost: 2,
-            icon: '💀',
-            description: 'Deal 1 damage to a minion and restore 1 health to your hero.',
+            image: getHeroPowerIcon('umbra'),
+            description: 'Deal 1 damage to a minion and heal 1 health.',
             usesPerTurn: 1,
             needsTarget: true,
             validTargets: 'anyMinion',
             
             effect: (game, targetId) => {
-                // Find the target minion
                 let targetMinion = game.playerBoard.find(m => m && m.id === targetId);
-                let isEnemy = false;
-                
                 if (!targetMinion) {
                     targetMinion = game.enemyBoard.find(m => m && m.id === targetId);
-                    isEnemy = true;
                 }
                 
                 if (targetMinion) {
                     game.dealDamage(targetMinion, 1, 'ability');
-                    
-                    // Heal hero
                     const healAmount = Math.min(1, game.playerHero.maxHealth - game.playerHero.currentHealth);
                     game.playerHero.currentHealth += healAmount;
-                    
                     game.addBattleLog(`Soul Drain damages ${targetMinion.name} and heals you!`);
                     game.animateHeal(game.playerHero.id, healAmount);
                 }
@@ -259,16 +276,17 @@ const HEROES = [
     
     {
         id: 'luxor',
-        name: 'Luxor the Light Bringer',
-        icon: '✨',
-        description: 'Channels divine light to empower and protect',
+        name: 'Luxor Light Bringer',
+        title: 'Hand of the Divine',
+        description: 'Channels divine light to empower and protect.',
         startingHealth: 30,
         startingArmor: 0,
+        image: getHeroPortrait('luxor'),
         
         heroPower: {
             name: 'Divine Blessing',
             cost: 2,
-            icon: '🌟',
+            image: getHeroPowerIcon('luxor'),
             description: 'Give a friendly minion +1/+1.',
             usesPerTurn: 1,
             needsTarget: true,
@@ -288,7 +306,7 @@ const HEROES = [
         
         passive: {
             name: 'Radiant Aura',
-            description: 'At the start of your turn, restore 2 health to your hero.',
+            description: 'Start of turn: Restore 2 health to your hero.',
             trigger: 'startTurn',
             effect: (game) => {
                 const healAmount = Math.min(2, game.playerHero.maxHealth - game.playerHero.currentHealth);
@@ -306,60 +324,29 @@ const HEROES = [
     
     {
         id: 'vortex',
-        name: 'Vortex the Void Walker',
-        icon: '🕳️',
-        description: 'Bends reality and space to confuse enemies',
+        name: 'Vortex Void Walker',
+        title: 'Consumer of Realities',
+        description: 'Bends reality and space to confuse enemies.',
         startingHealth: 28,
         startingArmor: 0,
+        image: getHeroPortrait('vortex'),
         
         heroPower: {
             name: 'Reality Shift',
             cost: 2,
-            icon: '🌀',
-            description: 'Swap the positions of two minions on the board.',
+            image: getHeroPowerIcon('vortex'),
+            description: 'Swap the positions of two minions.',
             usesPerTurn: 1,
             needsTarget: true,
             validTargets: 'anyMinion',
             requiresTwoTargets: true,
             
             effect: (game, targetId1, targetId2) => {
-                // Find both minions
-                let minion1, minion2, index1, index2, board1, board2;
-                
-                // Check player board
-                index1 = game.playerBoard.findIndex(m => m && m.id === targetId1);
-                if (index1 !== -1) {
-                    minion1 = game.playerBoard[index1];
-                    board1 = 'player';
-                } else {
-                    index1 = game.enemyBoard.findIndex(m => m && m.id === targetId1);
-                    if (index1 !== -1) {
-                        minion1 = game.enemyBoard[index1];
-                        board1 = 'enemy';
-                    }
-                }
-                
-                index2 = game.playerBoard.findIndex(m => m && m.id === targetId2);
-                if (index2 !== -1) {
-                    minion2 = game.playerBoard[index2];
-                    board2 = 'player';
-                } else {
-                    index2 = game.enemyBoard.findIndex(m => m && m.id === targetId2);
-                    if (index2 !== -1) {
-                        minion2 = game.enemyBoard[index2];
-                        board2 = 'enemy';
-                    }
-                }
-                
-                // Swap positions
-                if (minion1 && minion2) {
-                    if (board1 === 'player') game.playerBoard[index1] = minion2;
-                    else game.enemyBoard[index1] = minion2;
-                    
-                    if (board2 === 'player') game.playerBoard[index2] = minion1;
-                    else game.enemyBoard[index2] = minion1;
-                    
-                    game.addBattleLog(`Reality Shift swaps ${minion1.name} and ${minion2.name}!`);
+                // Logic handled by game state for complex swapping
+                // We assume GameState has a method or we manually swap array indices
+                // For safety in this data file, we delegate to game engine logic
+                if (game.swapMinions) {
+                    game.swapMinions(targetId1, targetId2);
                 }
             }
         },
@@ -368,7 +355,7 @@ const HEROES = [
             name: 'Void Touch',
             description: 'Enemy minions cost (1) more mana.',
             trigger: 'passive',
-            effect: null // This is handled in enemy AI logic
+            effect: null // Handled by cost calculation logic in GameState
         },
         
         color: 'from-indigo-600 to-purple-700',
@@ -389,7 +376,7 @@ function createHeroInstance(heroId) {
     return {
         id: heroId,
         name: heroData.name,
-        icon: heroData.icon,
+        image: heroData.image,
         description: heroData.description,
         maxHealth: heroData.startingHealth,
         currentHealth: heroData.startingHealth,

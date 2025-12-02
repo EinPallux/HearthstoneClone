@@ -1,1052 +1,681 @@
 /* ============================================
    UI MANAGER
-   Handles all UI updates and user interactions
+   The "Brain" - Connects Logic to the Visual Interface
    ============================================ */
 
 const UIManager = {
     
-    // References
+    // State References
     gameState: null,
     battleSystem: null,
     deckBuilder: null,
     questManager: null,
-    cardTooltip: null,
+    aiPlayer: null,
+    
+    // UI State
+    activeScreen: 'mainMenu',
     
     // ============================================
     // INITIALIZATION
     // ============================================
     
-    /**
-     * Initialize UI Manager
-     */
     init() {
+        console.log('🔮 UI Manager Initializing...');
+        
+        // Initialize Core Systems
         this.deckBuilder = new DeckBuilder();
         this.questManager = new QuestManager();
         
+        // Bind Global Events
         this.setupEventListeners();
+        
+        // Load Initial Data
         this.loadSavedData();
         
-        // Make UI Manager globally accessible
-        window.UIManager = this;
-        
-        console.log('UI Manager initialized');
+        // Start Music (Muted by default until interaction)
+        document.body.addEventListener('click', () => {
+            AnimationManager.playTheme('menu');
+        }, { once: true });
+
+        console.log('✅ UI Ready');
     },
     
-    /**
-     * Setup all event listeners
-     */
-    setupEventListeners() {
-        // Main menu buttons
-        document.getElementById('btnSelectHero')?.addEventListener('click', () => {
-            this.showHeroSelection();
-        });
-        
-        document.getElementById('btnDeckBuilder')?.addEventListener('click', () => {
-            this.showDeckBuilder();
-        });
-        
-        document.getElementById('btnQuests')?.addEventListener('click', () => {
-            this.showQuests();
-        });
-        
-        document.getElementById('btnStartGame')?.addEventListener('click', () => {
-            this.showDifficultySelection();
-        });
-        
-        // Hero selection
-        document.getElementById('btnBackFromHero')?.addEventListener('click', () => {
-            this.showMainMenu();
-        });
-        
-        // Deck builder
-        document.getElementById('btnBackFromDeck')?.addEventListener('click', () => {
-            this.showMainMenu();
-        });
-        
-        document.getElementById('btnSaveDeck')?.addEventListener('click', () => {
-            this.saveDeck();
-        });
-        
-        document.getElementById('btnSuggestDeck')?.addEventListener('click', () => {
-            this.suggestDeck();
-        });
-        
-        document.getElementById('btnPreBuiltDecks')?.addEventListener('click', () => {
-            this.showPreBuiltDecks();
-        });
-        
-        // Filters
-        document.getElementById('filterCost')?.addEventListener('change', (e) => {
-            this.deckBuilder.setFilter('cost', e.target.value);
-            this.updateCardCollection();
-        });
-        
-        document.getElementById('filterType')?.addEventListener('change', (e) => {
-            this.deckBuilder.setFilter('type', e.target.value);
-            this.updateCardCollection();
-        });
-        
-        // Quests
-        document.getElementById('btnBackFromQuests')?.addEventListener('click', () => {
-            this.showMainMenu();
-        });
-        
-        // Difficulty selection
-        document.getElementById('btnBackFromDifficulty')?.addEventListener('click', () => {
-            this.showMainMenu();
-        });
-        
-        document.querySelectorAll('.difficulty-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const difficulty = e.currentTarget.dataset.difficulty;
-                this.startGame(difficulty);
-            });
-        });
-        
-        // Game board
-        document.getElementById('btnEndTurn')?.addEventListener('click', () => {
-            this.endTurn();
-        });
-        
-        document.getElementById('btnSurrender')?.addEventListener('click', () => {
-            this.surrender();
-        });
-        
-        // End game screen
-        document.getElementById('btnPlayAgain')?.addEventListener('click', () => {
-            this.showDifficultySelection();
-        });
-        
-        document.getElementById('btnMainMenu')?.addEventListener('click', () => {
-            this.showMainMenu();
-        });
-        
-        // Deck name input
-        document.getElementById('deckName')?.addEventListener('input', (e) => {
-            this.deckBuilder.currentDeck.name = e.target.value;
-        });
-    },
-    
-    /**
-     * Load saved data
-     */
     loadSavedData() {
-        // Initialize storage
         StorageManager.initializePreBuiltDecks();
         StorageManager.getCollection();
-    },
-    
-    // ============================================
-    // SCREEN MANAGEMENT
-    // ============================================
-    
-    /**
-     * Show main menu
-     */
-    showMainMenu() {
-        const mainMenu = document.getElementById('mainMenu');
-        const heroSelection = document.getElementById('heroSelection');
-        const deckBuilder = document.getElementById('deckBuilder');
-        const questsScreen = document.getElementById('questsScreen');
-        const gameBoard = document.getElementById('gameBoard');
-        const difficultySelection = document.getElementById('difficultySelection');
-        const endGameScreen = document.getElementById('endGameScreen');
         
-        [heroSelection, deckBuilder, questsScreen, gameBoard, difficultySelection, endGameScreen].forEach(screen => {
-            if (screen) screen.classList.add('hidden');
+        // If we have a selected hero, highlight it? (Logic handled in render)
+    },
+
+    // ============================================
+    // SCREEN NAVIGATION
+    // ============================================
+    
+    showScreen(screenId) {
+        const screens = ['mainMenu', 'heroSelection', 'deckBuilder', 'questsScreen', 'difficultySelection', 'gameBoard', 'endGameScreen'];
+        
+        // Hide all screens
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.add('hidden');
+                el.style.opacity = '0';
+            }
         });
         
-        if (mainMenu) mainMenu.classList.remove('hidden');
-    },
-    
-    /**
-     * Show hero selection
-     */
-    showHeroSelection() {
-        AnimationManager.fadeTransition(
-            document.getElementById('mainMenu'),
-            document.getElementById('heroSelection')
-        );
-        
-        this.renderHeroSelection();
-    },
-    
-    /**
-     * Show deck builder
-     */
-    showDeckBuilder() {
-        AnimationManager.fadeTransition(
-            document.getElementById('mainMenu'),
-            document.getElementById('deckBuilder')
-        );
-        
-        // Load current deck or create new
-        const currentDeck = StorageManager.getCurrentDeck();
-        if (currentDeck) {
-            this.deckBuilder.loadDeck(currentDeck.name);
-        } else {
-            // Set a default name
-            this.deckBuilder.currentDeck.name = 'My Deck';
+        // Show target screen
+        const target = document.getElementById(screenId);
+        if(target) {
+            target.classList.remove('hidden');
+            // Force reflow for transition
+            void target.offsetWidth; 
+            target.style.opacity = '1';
+            this.activeScreen = screenId;
         }
-        
-        this.updateDeckBuilder();
     },
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
     
-    /**
-     * Show quests
-     */
-    showQuests() {
-        AnimationManager.fadeTransition(
-            document.getElementById('mainMenu'),
-            document.getElementById('questsScreen')
-        );
+    setupEventListeners() {
+        // --- Main Menu ---
+        document.getElementById('btnStartGame').onclick = () => this.showScreen('difficultySelection');
+        document.getElementById('btnSelectHero').onclick = () => {
+            this.renderHeroSelection();
+            this.showScreen('heroSelection');
+        };
+        document.getElementById('btnDeckBuilder').onclick = () => {
+            this.renderDeckBuilder();
+            this.showScreen('deckBuilder');
+        };
+        document.getElementById('btnQuests').onclick = () => {
+            this.renderQuests();
+            this.showScreen('questsScreen');
+        };
+
+        // --- Hero Selection ---
+        document.getElementById('btnBackFromHero').onclick = () => this.showScreen('mainMenu');
+
+        // --- Deck Builder ---
+        document.getElementById('btnBackFromDeck').onclick = () => this.showScreen('mainMenu');
+        document.getElementById('btnSaveDeck').onclick = () => this.saveDeck();
+        document.getElementById('btnSuggestDeck').onclick = () => {
+            this.deckBuilder.suggestDeck();
+            this.updateDeckBuilderUI();
+        };
+        document.getElementById('btnPreBuiltDecks').onclick = () => {
+             // Simple toggle for now, could be a modal
+             this.deckBuilder.suggestDeck('control'); 
+             this.updateDeckBuilderUI();
+        };
         
-        this.renderQuests();
+        // Filters
+        document.getElementById('filterCost').onchange = (e) => {
+            this.deckBuilder.setFilter('cost', e.target.value);
+            this.renderCollection();
+        };
+        document.getElementById('filterType').onchange = (e) => {
+            this.deckBuilder.setFilter('type', e.target.value);
+            this.renderCollection();
+        };
+        document.getElementById('deckName').oninput = (e) => {
+            this.deckBuilder.currentDeck.name = e.target.value;
+        };
+
+        // --- Quests ---
+        document.getElementById('btnBackFromQuests').onclick = () => this.showScreen('mainMenu');
+
+        // --- Difficulty Select ---
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.onclick = () => this.startGame(btn.dataset.difficulty);
+        });
+        document.getElementById('btnBackFromDifficulty').onclick = () => this.showScreen('mainMenu');
+
+        // --- Game Board ---
+        document.getElementById('btnEndTurn').onclick = () => this.handleEndTurn();
+        document.getElementById('btnSurrender').onclick = () => this.handleSurrender();
+
+        // --- End Game ---
+        document.getElementById('btnPlayAgain').onclick = () => this.showScreen('difficultySelection');
+        document.getElementById('btnMainMenu').onclick = () => this.showScreen('mainMenu');
     },
-    
-    /**
-     * Show difficulty selection
-     */
-    showDifficultySelection() {
-        // Check if hero selected
-        const selectedHero = StorageManager.getSelectedHero();
-        if (!selectedHero) {
-            AnimationManager.showNotification('Please select a hero first!', 'error', 3000);
-            setTimeout(() => {
-                this.showHeroSelection();
-            }, 1000);
-            return;
-        }
-        
-        // Check if deck exists
-        const currentDeck = StorageManager.getCurrentDeck();
-        if (!currentDeck || currentDeck.cards.length !== 25) {
-            AnimationManager.showNotification('Please build a 25-card deck first!', 'error', 3000);
-            AnimationManager.showNotification('💡 Tip: Use "AI Suggest Deck" or "Pre-Built Decks" for quick start!', 'info', 5000);
-            setTimeout(() => {
-                this.showDeckBuilder();
-            }, 1000);
-            return;
-        }
-        
-        AnimationManager.fadeTransition(
-            document.getElementById('mainMenu'),
-            document.getElementById('difficultySelection')
-        );
-    },
-    
-    /**
-     * Start game
-     */
+
+    // ============================================
+    // GAME LOGIC BRIDGES
+    // ============================================
+
     startGame(difficulty) {
         AnimationManager.showLoading(true);
-        
-        setTimeout(() => {
-            const selectedHero = StorageManager.getSelectedHero();
+        AnimationManager.playTheme('battle');
+
+        // Allow UI to update before heavy processing
+        requestAnimationFrame(() => {
+            const selectedHeroId = StorageManager.getSelectedHero() || 'pyra'; // Default
             
-            // Initialize game state
+            // Init Game Core
             this.gameState = new GameState();
             this.gameState.questManager = this.questManager;
-            this.gameState.initializeGame(selectedHero, difficulty);
+            this.gameState.initializeGame(selectedHeroId, difficulty);
             
-            // Initialize battle system
+            // Init Systems
             this.battleSystem = new BattleSystem(this.gameState);
-            
-            // Initialize AI
             this.aiPlayer = new AIPlayer(this.gameState, difficulty);
             
-            // Override AI turn execution
-            this.gameState.executeAITurn = () => {
-                this.aiPlayer.executeTurn();
-            };
-            
-            AnimationManager.fadeTransition(
-                document.getElementById('difficultySelection'),
-                document.getElementById('gameBoard')
-            );
-            
-            AnimationManager.showLoading(false);
-            
+            // Override AI hook
+            this.gameState.executeAITurn = () => this.aiPlayer.executeTurn();
+
+            // Initial Render
             this.updateGameBoard();
-        }, 500);
-    },
-    
-    // ============================================
-    // HERO SELECTION
-    // ============================================
-    
-    /**
-     * Render hero selection
-     */
-    renderHeroSelection() {
-        const heroGrid = document.getElementById('heroGrid');
-        if (!heroGrid) return;
-        
-        heroGrid.innerHTML = '';
-        
-        const selectedHero = StorageManager.getSelectedHero();
-        
-        HEROES.forEach(hero => {
-            const heroCard = document.createElement('div');
-            heroCard.className = `relative bg-gradient-to-b ${hero.color} rounded-xl p-6 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl ${selectedHero === hero.id ? 'ring-4 ring-amber-400' : ''}`;
             
-            heroCard.innerHTML = `
-                <div class="text-center">
-                    <div class="text-7xl mb-4">${hero.icon}</div>
-                    <h3 class="text-2xl font-bold text-white mb-2">${hero.name}</h3>
-                    <p class="text-sm text-white/80 mb-4">${hero.description}</p>
-                    
-                    <div class="bg-black/30 rounded-lg p-3 mb-3">
-                        <div class="text-xs text-amber-400 font-bold mb-1">HERO POWER</div>
-                        <div class="flex items-center justify-center gap-2 mb-1">
-                            <span class="text-2xl">${hero.heroPower.icon}</span>
-                            <span class="text-white font-bold">${hero.heroPower.name}</span>
-                        </div>
-                        <p class="text-xs text-white/90">${hero.heroPower.description}</p>
-                    </div>
-                    
-                    <div class="bg-black/30 rounded-lg p-3">
-                        <div class="text-xs text-purple-400 font-bold mb-1">PASSIVE</div>
-                        <div class="text-white font-bold text-sm mb-1">${hero.passive.name}</div>
-                        <p class="text-xs text-white/90">${hero.passive.description}</p>
-                    </div>
-                    
-                    <div class="mt-4 flex justify-around text-sm">
-                        <div>
-                            <div class="text-green-400 font-bold">${hero.startingHealth}</div>
-                            <div class="text-white/70 text-xs">Health</div>
-                        </div>
-                        <div>
-                            <div class="text-blue-400 font-bold">${hero.startingArmor}</div>
-                            <div class="text-white/70 text-xs">Armor</div>
-                        </div>
-                    </div>
-                    
-                    ${selectedHero === hero.id ? '<div class="mt-3 text-amber-400 font-bold">✓ SELECTED</div>' : ''}
-                </div>
-            `;
-            
-            heroCard.addEventListener('click', () => {
-                StorageManager.saveSelectedHero(hero.id);
-                AnimationManager.showNotification(`${hero.name} selected!`, 'success', 2000);
-                this.renderHeroSelection();
-            });
-            
-            heroGrid.appendChild(heroCard);
-        });
-    },
-    
-    // ============================================
-    // DECK BUILDER
-    // ============================================
-    
-    /**
-     * Update deck builder UI
-     */
-    updateDeckBuilder() {
-        this.updateCardCollection();
-        this.updateCurrentDeck();
-        
-        // Update deck name
-        const deckNameInput = document.getElementById('deckName');
-        if (deckNameInput) {
-            deckNameInput.value = this.deckBuilder.currentDeck.name;
-        }
-    },
-    
-    /**
-     * Update card collection display
-     */
-    updateCardCollection() {
-        const container = document.getElementById('cardCollection');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        const cards = this.deckBuilder.getFilteredCards();
-        
-        cards.forEach(card => {
-            const cardElement = this.createCardElement(card, 'collection');
-            
-            cardElement.addEventListener('click', () => {
-                this.addCardToDeck(card.id);
-            });
-            
-            // Add hover tooltip
-            cardElement.addEventListener('mouseenter', () => {
-                this.showCardTooltip(card, cardElement);
-            });
-            
-            cardElement.addEventListener('mouseleave', () => {
-                this.hideCardTooltip();
-            });
-            
-            container.appendChild(cardElement);
-        });
-    },
-    
-    /**
-     * Update current deck display
-     */
-    updateCurrentDeck() {
-        const container = document.getElementById('currentDeck');
-        const countDisplay = document.getElementById('deckCount');
-        
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Group cards by ID
-        const cardCounts = {};
-        this.deckBuilder.currentDeck.cards.forEach(cardId => {
-            cardCounts[cardId] = (cardCounts[cardId] || 0) + 1;
-        });
-        
-        // Create card entries
-        Object.entries(cardCounts).forEach(([cardId, count]) => {
-            const card = getCardById(cardId);
-            if (!card) return;
-            
-            const entry = document.createElement('div');
-            entry.className = 'deck-card-mini';
-            
-            entry.innerHTML = `
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <span class="text-blue-400 font-bold">${card.cost}</span>
-                        <span class="text-white font-semibold">${card.name}</span>
-                        <span class="text-amber-400 text-sm">x${count}</span>
-                    </div>
-                    <div class="text-xs text-gray-400">${card.type}</div>
-                </div>
-                <button class="text-red-400 hover:text-red-300 font-bold">×</button>
-            `;
-            
-            entry.querySelector('button').addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removeCardFromDeck(cardId);
-            });
-            
-            container.appendChild(entry);
-        });
-        
-        // Update count
-        if (countDisplay) {
-            countDisplay.textContent = `${this.deckBuilder.currentDeck.cards.length}/25`;
-            
-            if (this.deckBuilder.currentDeck.cards.length === 25) {
-                countDisplay.classList.add('text-green-400');
-                countDisplay.classList.remove('text-amber-400');
-            } else {
-                countDisplay.classList.add('text-amber-400');
-                countDisplay.classList.remove('text-green-400');
-            }
-        }
-    },
-    
-    /**
-     * Add card to deck
-     */
-    addCardToDeck(cardId) {
-        if (this.deckBuilder.addCard(cardId)) {
-            this.updateCurrentDeck();
-        }
-    },
-    
-    /**
-     * Remove card from deck
-     */
-    removeCardFromDeck(cardId) {
-        this.deckBuilder.removeCard(cardId);
-        this.updateCurrentDeck();
-    },
-    
-    /**
-     * Save deck
-     */
-    saveDeck() {
-        if (this.deckBuilder.saveDeck()) {
-            StorageManager.setCurrentDeck(this.deckBuilder.currentDeck.name);
-        }
-    },
-    
-    /**
-     * Suggest deck
-     */
-    suggestDeck() {
-        const archetypes = ['aggro', 'control', 'midrange', 'spell', 'balanced'];
-        const randomArchetype = archetypes[Math.floor(Math.random() * archetypes.length)];
-        
-        this.deckBuilder.suggestDeck(randomArchetype);
-        this.updateDeckBuilder();
-        
-        // Auto-save the suggested deck
-        setTimeout(() => {
-            if (this.deckBuilder.currentDeck.cards.length === 25) {
-                this.deckBuilder.saveDeck();
-                this.updateDeckBuilder();
-            }
-        }, 500);
-    },
-    
-    /**
-     * Show pre-built decks
-     */
-    showPreBuiltDecks() {
-        const decks = StorageManager.getPreBuiltDecks();
-        
-        // Create modal or dropdown to select pre-built deck
-        AnimationManager.showNotification('Loading pre-built deck...', 'info', 1500);
-        
-        const randomDeck = decks[Math.floor(Math.random() * decks.length)];
-        this.deckBuilder.currentDeck = {
-            name: randomDeck.name,
-            cards: [...randomDeck.cards],
-            hero: randomDeck.hero
-        };
-        
-        this.updateDeckBuilder();
-        
-        // Auto-save the pre-built deck
-        setTimeout(() => {
-            if (this.deckBuilder.currentDeck.cards.length === 25) {
-                this.deckBuilder.saveDeck();
-                this.updateDeckBuilder();
-            }
-        }, 500);
-    },
-    
-    // ============================================
-    // QUESTS
-    // ============================================
-    
-    /**
-     * Render quests
-     */
-    renderQuests() {
-        const container = document.getElementById('questList');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        const quests = this.questManager.getActiveQuestsWithProgress();
-        
-        quests.forEach(quest => {
-            const questCard = document.createElement('div');
-            questCard.className = `quest-card ${getQuestRarityClass(quest.rarity)} p-6 rounded-xl`;
-            
-            const isComplete = quest.progress >= quest.target;
-            
-            questCard.innerHTML = `
-                <div class="flex items-start gap-4">
-                    <div class="text-5xl">${quest.icon}</div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-2xl font-bold text-white">${quest.name}</h3>
-                            <span class="text-amber-400 font-bold text-xl">${quest.reward.amount} 💰</span>
-                        </div>
-                        <p class="text-white/80 mb-3">${quest.description}</p>
-                        
-                        <div class="quest-progress-bar mb-2">
-                            <div class="quest-progress-fill" style="width: ${quest.percentage}%"></div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <span class="text-white font-semibold">${quest.progress} / ${quest.target}</span>
-                            ${isComplete ? '<span class="text-green-400 font-bold">✓ COMPLETE</span>' : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            container.appendChild(questCard);
-        });
-        
-        // Show total gold earned
-        const totalGold = document.createElement('div');
-        totalGold.className = 'text-center mt-8 text-2xl font-bold text-amber-400';
-        totalGold.textContent = `Total Gold Earned: ${this.questManager.totalGoldEarned} 💰`;
-        container.appendChild(totalGold);
-    },
-    
-    // ============================================
-    // GAME BOARD
-    // ============================================
-    
-    /**
-     * Update game board
-     */
-    updateGameBoard() {
-        this.updateHeroes();
-        this.updateBoards();
-        this.updateHands();
-        this.updateMana();
-        this.updateBattleLog();
-        this.updateHeroPower();
-    },
-    
-    /**
-     * Update hero displays
-     */
-    updateHeroes() {
-        this.updateHeroDisplay('playerHero', this.gameState.playerHero);
-        this.updateHeroDisplay('enemyHero', this.gameState.enemyHero);
-    },
-    
-    /**
-     * Update single hero display
-     */
-    updateHeroDisplay(heroId, hero) {
-        const container = document.getElementById(heroId);
-        if (!container) return;
-        
-        container.innerHTML = `
-            <div class="hero-avatar">
-                ${hero.icon}
-            </div>
-            <div class="hero-info">
-                <div class="text-xl font-bold text-white">${hero.name}</div>
-                <div class="flex items-center gap-2">
-                    <div class="stat-badge health-badge">${hero.currentHealth}</div>
-                    ${hero.armor > 0 ? `<div class="stat-badge armor-badge">${hero.armor}</div>` : ''}
-                </div>
-            </div>
-        `;
-        
-        // Add click handler for hero attacks (not implemented in basic version)
-        if (heroId === 'enemyHero') {
-            container.style.cursor = 'pointer';
-            container.onclick = () => {
-                if (this.battleSystem.targetingMode && 
-                    this.battleSystem.validTargets.includes('enemyHero')) {
-                    this.battleSystem.selectTarget('enemyHero');
-                }
-            };
-        }
-    },
-    
-    /**
-     * Update board displays
-     */
-    updateBoards() {
-        this.updateBoard('playerBoard', this.gameState.playerBoard, true);
-        this.updateBoard('enemyBoard', this.gameState.enemyBoard, false);
-    },
-    
-    /**
-     * Update single board
-     */
-    updateBoard(boardId, board, isPlayer) {
-        const container = document.getElementById(boardId);
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        board.forEach((minion, index) => {
-            if (minion) {
-                const minionCard = this.createMinionCard(minion, isPlayer);
+            // Transition
+            setTimeout(() => {
+                AnimationManager.showLoading(false);
+                this.showScreen('gameBoard');
                 
-                if (isPlayer) {
-                    minionCard.addEventListener('click', () => {
-                        if (this.battleSystem.targetingMode) {
-                            this.battleSystem.selectTarget(minion.id);
-                        } else {
-                            this.battleSystem.initiateMinionAttack(minion, index);
-                        }
-                    });
-                } else {
-                    minionCard.addEventListener('click', () => {
-                        if (this.battleSystem.targetingMode && 
-                            this.battleSystem.validTargets.includes(minion.id)) {
-                            this.battleSystem.selectTarget(minion.id);
-                        }
-                    });
-                }
-                
-                container.appendChild(minionCard);
-            }
+                // Entrance Animations
+                this.gameState.startPlayerTurn(); // Start turn 1 logic
+            }, 1000);
         });
     },
-    
-    /**
-     * Create minion card element
-     */
-    createMinionCard(minion, isPlayer) {
-        const div = document.createElement('div');
-        div.className = 'minion-card';
-        div.dataset.minionId = minion.id;
-        div.id = minion.id;
-        
-        if (isPlayer && minion.canAttack && !minion.frozen) {
-            div.classList.add('can-attack');
-        }
-        
-        if (minion.frozen) {
-            div.classList.add('frozen');
-        }
-        
-        // Format abilities for display
-        let abilitiesText = '';
-        if (minion.abilities && minion.abilities.length > 0) {
-            const formattedAbilities = minion.abilities
-                .filter(a => !['battlecry', 'deathrattle', 'aura', 'endTurnEffect'].includes(a))
-                .map(ability => {
-                    if (typeof formatAbilityName === 'function') {
-                        return formatAbilityName(ability);
-                    }
-                    // Fallback formatting
-                    return ability.replace(/_/g, ' ')
-                        .split(' ')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                });
-            
-            if (formattedAbilities.length > 0) {
-                abilitiesText = `<div class="text-purple-300 text-xs mt-1">${formattedAbilities.join(', ')}</div>`;
-            }
-        }
-        
-        div.innerHTML = `
-            <div class="relative h-full flex flex-col justify-between p-3 bg-gradient-to-b from-slate-700 to-slate-800 rounded-lg">
-                <div class="flex justify-between items-start">
-                    <div class="stat-badge attack-badge">${minion.attack}</div>
-                    <div class="text-xs text-center flex-1 mx-2">
-                        <div class="text-amber-400 font-bold">${minion.name}</div>
-                        ${abilitiesText}
-                    </div>
-                    <div class="stat-badge health-badge">${minion.currentHealth}</div>
-                </div>
-                
-                ${minion.divineShield ? '<div class="absolute inset-0 animate-shield pointer-events-none"></div>' : ''}
-                ${minion.frozen ? '<div class="absolute inset-0 bg-blue-500/30 pointer-events-none"></div>' : ''}
-            </div>
-        `;
-        
-        return div;
-    },
-    
-    /**
-     * Update hand displays
-     */
-    updateHands() {
-        const container = document.getElementById('playerHand');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        this.gameState.playerHand.forEach((card, index) => {
-            const cardElement = this.createCardElement(card, 'hand', index);
-            
-            cardElement.addEventListener('click', () => {
-                this.battleSystem.initiateCardPlay(card, index);
-            });
-            
-            // Add hover tooltip
-            cardElement.addEventListener('mouseenter', (e) => {
-                this.showCardTooltip(card, cardElement);
-            });
-            
-            cardElement.addEventListener('mouseleave', () => {
-                this.hideCardTooltip();
-            });
-            
-            container.appendChild(cardElement);
-        });
-        
-        // Update deck count
-        const deckCountElement = document.getElementById('remainingCards');
-        if (deckCountElement) {
-            deckCountElement.textContent = this.gameState.playerDeck.length;
-        }
-    },
-    
-    /**
-     * Create card element
-     */
-    createCardElement(card, context = 'collection', handIndex = null) {
-        const div = document.createElement('div');
-        div.className = `card card-${card.rarity} ${context === 'hand' ? 'card-in-hand' : ''}`;
-        
-        if (handIndex !== null) {
-            div.dataset.handIndex = handIndex;
-        }
-        
-        const rarityColors = {
-            common: 'from-slate-600 to-slate-700',
-            rare: 'from-blue-600 to-blue-700',
-            epic: 'from-purple-600 to-purple-700',
-            legendary: 'from-amber-600 to-amber-700'
-        };
-        
-        div.innerHTML = `
-            <div class="relative h-full flex flex-col bg-gradient-to-b ${rarityColors[card.rarity]} rounded-xl p-3">
-                <div class="absolute top-2 left-2 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                    ${card.cost}
-                </div>
-                
-                <div class="flex-1 flex items-center justify-center my-4">
-                    <div class="text-5xl">
-                        ${card.type === 'minion' ? '👤' : card.type === 'spell' ? '✨' : '⚔️'}
-                    </div>
-                </div>
-                
-                <div class="text-center">
-                    <div class="font-bold text-white text-sm mb-1">${card.name}</div>
-                    <div class="type-badge type-${card.type} mx-auto mb-2">${card.type}</div>
-                    <div class="text-xs text-white/90 mb-2 h-12 overflow-hidden">${card.description}</div>
-                    
-                    ${card.type === 'minion' ? `
-                        <div class="flex justify-around">
-                            <div class="stat-badge attack-badge">${card.attack}</div>
-                            <div class="stat-badge health-badge">${card.health}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${card.type === 'weapon' ? `
-                        <div class="flex justify-around">
-                            <div class="stat-badge attack-badge">${card.attack}</div>
-                            <div class="text-xs text-white">Dur: ${card.durability}</div>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-        
-        return div;
-    },
-    
-    /**
-     * Update mana display
-     */
-    updateMana() {
-        const currentManaEl = document.getElementById('currentMana');
-        const maxManaEl = document.getElementById('maxMana');
-        
-        if (currentManaEl) currentManaEl.textContent = this.gameState.playerCurrentMana;
-        if (maxManaEl) maxManaEl.textContent = this.gameState.playerMaxMana;
-    },
-    
-    /**
-     * Update battle log
-     */
-    updateBattleLog() {
-        const container = document.getElementById('battleLog');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Show last 10 messages
-        const recentLogs = this.gameState.battleLog.slice(-10);
-        
-        recentLogs.forEach(log => {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'text-xs text-amber-300';
-            logEntry.textContent = log.message;
-            container.appendChild(logEntry);
-        });
-        
-        // Scroll to bottom
-        container.scrollTop = container.scrollHeight;
-    },
-    
-    /**
-     * Update hero power button
-     */
-    updateHeroPower() {
-        const container = document.getElementById('heroPowerBtn');
-        if (!container) return;
-        
-        const heroPower = this.gameState.playerHero.heroPower;
-        const canUse = heroPower.timesUsedThisTurn < heroPower.usesPerTurn &&
-                       heroPower.cost <= this.gameState.playerCurrentMana &&
-                       this.gameState.isPlayerTurn;
-        
-        container.innerHTML = `
-            <div class="hero-power ${canUse ? 'available' : 'disabled'}">
-                <div class="text-2xl">${heroPower.icon}</div>
-                <div class="absolute bottom-0 right-0 bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs font-bold">
-                    ${heroPower.cost}
-                </div>
-            </div>
-        `;
-        
-        if (canUse) {
-            container.style.cursor = 'pointer';
-            container.onclick = () => {
-                this.battleSystem.initiateHeroPower();
-            };
+
+    handleEndTurn() {
+        if(this.gameState && this.gameState.isPlayerTurn) {
+            AnimationManager.playSound('sfx-click');
+            this.battleSystem.cancelAction(); // Clear any pending targeting
+            this.gameState.endPlayerTurn();
+            this.updateGameBoard();
         } else {
-            container.style.cursor = 'not-allowed';
-            container.onclick = null;
+            AnimationManager.showNotification("Not your turn!", "error");
         }
     },
-    
-    /**
-     * End turn
-     */
-    endTurn() {
-        console.log('End turn clicked', this.gameState, this.gameState?.isPlayerTurn);
-        
-        if (!this.gameState) {
-            AnimationManager.showNotification('Game not started!', 'error', 2000);
-            return;
-        }
-        
-        if (!this.gameState.isPlayerTurn) {
-            AnimationManager.showNotification("Wait for your turn!", 'error', 2000);
-            return;
-        }
-        
-        if (this.battleSystem) {
-            this.battleSystem.cancelAction();
-        }
-        
-        this.gameState.endPlayerTurn();
-        this.updateGameBoard();
-    },
-    
-    /**
-     * Surrender
-     */
-    surrender() {
-        if (!this.gameState) {
-            AnimationManager.showNotification('No active game!', 'error', 2000);
-            return;
-        }
-        
-        if (confirm('Are you sure you want to surrender?')) {
-            this.gameState.playerHero.currentHealth = 0;
+
+    handleSurrender() {
+        if(confirm("Forfeit the match?")) {
             this.gameState.endGame(false);
         }
     },
-    
-    /**
-     * Show card tooltip on hover
-     */
-    showCardTooltip(card, element) {
-        // Remove existing tooltip
-        this.hideCardTooltip();
-        
-        const tooltip = document.createElement('div');
-        tooltip.className = 'card-tooltip';
-        tooltip.id = 'cardTooltip';
-        
-        // Format abilities
-        let abilitiesHTML = '';
-        if (card.abilities && card.abilities.length > 0) {
-            const formattedAbilities = card.abilities.map(ability => {
-                if (typeof formatAbilityName === 'function') {
-                    return formatAbilityName(ability);
-                }
-                return ability.replace(/_/g, ' ')
-                    .split(' ')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ');
-            });
-            abilitiesHTML = `<div class="text-purple-300 text-sm font-bold mb-2">🔮 ${formattedAbilities.join(', ')}</div>`;
+
+    // ============================================
+    // RENDERERS: HERO SELECTION
+    // ============================================
+
+    renderHeroSelection() {
+        const grid = document.getElementById('heroGrid');
+        grid.innerHTML = '';
+        const selectedId = StorageManager.getSelectedHero();
+
+        HEROES.forEach(hero => {
+            const el = document.createElement('div');
+            el.className = `relative group cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-300 ${selectedId === hero.id ? 'border-amber-400 scale-105 shadow-2xl' : 'border-slate-700 hover:border-blue-400'}`;
+            
+            el.innerHTML = `
+                <div class="h-40 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('${hero.image}')">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                </div>
+                <div class="p-4 bg-slate-800 relative z-10">
+                    <h3 class="font-cinzel font-bold text-white text-lg">${hero.name}</h3>
+                    <p class="text-xs text-amber-400 mb-2">${hero.title}</p>
+                    <p class="text-xs text-slate-300 line-clamp-2">${hero.description}</p>
+                    
+                    <div class="mt-3 flex items-center gap-2">
+                        <img src="${hero.heroPower.image}" class="w-8 h-8 rounded-full border border-slate-500">
+                        <div class="text-xs text-slate-400">
+                            <span class="text-white font-bold">Power:</span> ${hero.heroPower.name}
+                        </div>
+                    </div>
+                </div>
+                ${selectedId === hero.id ? '<div class="absolute top-2 right-2 bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded">SELECTED</div>' : ''}
+            `;
+
+            el.onclick = () => {
+                StorageManager.saveSelectedHero(hero.id);
+                AnimationManager.playSound('sfx-click');
+                this.renderHeroSelection(); // Re-render to update selection state
+            };
+            
+            grid.appendChild(el);
+        });
+    },
+
+    // ============================================
+    // RENDERERS: DECK BUILDER
+    // ============================================
+
+    renderDeckBuilder() {
+        // Load deck
+        const savedDeck = StorageManager.getCurrentDeck();
+        if(savedDeck) {
+            this.deckBuilder.currentDeck = savedDeck;
+            document.getElementById('deckName').value = savedDeck.name;
+        } else {
+            this.deckBuilder.currentDeck = { name: "New Deck", cards: [], hero: null };
+            document.getElementById('deckName').value = "New Deck";
         }
         
-        const rarityColors = {
-            common: 'text-gray-400',
-            rare: 'text-blue-400',
-            epic: 'text-purple-400',
-            legendary: 'text-amber-400'
-        };
+        this.updateDeckBuilderUI();
+    },
+
+    updateDeckBuilderUI() {
+        this.renderCollection();
+        this.renderCurrentDeck();
+    },
+
+    renderCollection() {
+        const container = document.getElementById('cardCollection');
+        container.innerHTML = '';
+        const cards = this.deckBuilder.getFilteredCards();
+
+        cards.forEach(card => {
+            // Re-use the main card renderer but scaling it down slightly if needed
+            const cardEl = this.createCardElement(card, 'collection');
+            cardEl.style.transform = 'scale(0.9)'; // Fit more in grid
+            
+            // Click to add
+            cardEl.onclick = () => {
+                if(this.deckBuilder.addCard(card.id)) {
+                    AnimationManager.playSound('sfx-click');
+                    this.updateDeckBuilderUI();
+                }
+            };
+
+            container.appendChild(cardEl);
+        });
+    },
+
+    renderCurrentDeck() {
+        const container = document.getElementById('currentDeck');
+        const countEl = document.getElementById('deckCount');
+        container.innerHTML = '';
         
-        tooltip.innerHTML = `
-            <div class="text-center">
-                <div class="text-2xl font-bold text-amber-400 mb-2">${card.name}</div>
-                <div class="${rarityColors[card.rarity]} text-sm font-bold uppercase mb-2">${card.rarity}</div>
-                <div class="flex justify-center gap-4 mb-3">
-                    <div class="text-blue-400 font-bold">💎 ${card.cost}</div>
-                    ${card.type === 'minion' ? `
-                        <div class="text-red-400 font-bold">⚔️ ${card.attack}</div>
-                        <div class="text-green-400 font-bold">❤️ ${card.health}</div>
-                    ` : ''}
-                    ${card.type === 'weapon' ? `
-                        <div class="text-red-400 font-bold">⚔️ ${card.attack}</div>
-                        <div class="text-yellow-400 font-bold">🛡️ ${card.durability}</div>
-                    ` : ''}
+        const deckMap = {};
+        this.deckBuilder.currentDeck.cards.forEach(id => {
+            deckMap[id] = (deckMap[id] || 0) + 1;
+        });
+
+        Object.keys(deckMap).forEach(id => {
+            const card = getCardById(id);
+            const count = deckMap[id];
+            
+            const el = document.createElement('div');
+            el.className = 'flex items-center justify-between bg-slate-800 p-2 rounded border-l-4 border-slate-600 hover:bg-slate-700 cursor-pointer group transition-all';
+            // Rarity color border
+            const rarityColors = { common: 'border-slate-400', rare: 'border-blue-400', epic: 'border-purple-400', legendary: 'border-amber-400' };
+            el.classList.replace('border-slate-600', rarityColors[card.rarity] || 'border-slate-600');
+
+            el.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <div class="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-xs font-bold text-white border border-blue-500">${card.cost}</div>
+                    <span class="text-sm font-bold text-slate-200 truncate group-hover:text-white">${card.name}</span>
                 </div>
-                ${abilitiesHTML}
-                <div class="text-white text-sm leading-relaxed bg-black/30 p-3 rounded-lg">
-                    ${card.description}
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 font-bold text-xs">x${count}</span>
+                    <i class="fa-solid fa-xmark text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+            `;
+
+            el.onclick = () => {
+                this.deckBuilder.removeCard(id);
+                this.updateDeckBuilderUI();
+            };
+
+            container.appendChild(el);
+        });
+
+        const count = this.deckBuilder.currentDeck.cards.length;
+        countEl.textContent = `${count}/25`;
+        countEl.className = count === 25 ? "font-mono font-bold text-green-400" : "font-mono font-bold text-amber-400";
+    },
+
+    saveDeck() {
+        if(this.deckBuilder.saveDeck()) {
+            AnimationManager.showNotification("Deck Saved!", "success");
+        }
+    },
+
+    // ============================================
+    // RENDERERS: GAME BOARD (THE CORE)
+    // ============================================
+
+    updateGameBoard() {
+        if(!this.gameState) return;
+
+        // 1. Hands
+        this.renderPlayerHand();
+        this.renderEnemyHand();
+
+        // 2. Boards
+        this.renderBoard('playerBoard', this.gameState.playerBoard, true);
+        this.renderBoard('enemyBoard', this.gameState.enemyBoard, false);
+
+        // 3. Heroes
+        this.renderHero('playerHero', this.gameState.playerHero, true);
+        this.renderHero('enemyHero', this.gameState.enemyHero, false);
+
+        // 4. Resources
+        this.updateMana();
+        document.getElementById('remainingCards').textContent = this.gameState.playerDeck.length;
+
+        // 5. Hero Power
+        this.renderHeroPower();
+
+        // 6. Logs
+        this.updateBattleLog();
+        
+        // 7. Check targeting state
+        if(this.battleSystem.targetingMode) {
+            document.body.style.cursor = 'crosshair';
+        } else {
+            document.body.style.cursor = 'default';
+        }
+    },
+
+    // --- Hand Rendering ---
+
+    renderPlayerHand() {
+        const container = document.getElementById('playerHand');
+        container.innerHTML = '';
+        
+        const handSize = this.gameState.playerHand.length;
+        // Calculate spread
+        const angleStep = 4; // degrees
+        const startAngle = -((handSize - 1) * angleStep) / 2;
+
+        this.gameState.playerHand.forEach((card, index) => {
+            const el = this.createCardElement(card, 'hand', index);
+            
+            // Fan effect
+            const rotation = startAngle + (index * angleStep);
+            const yOffset = Math.abs(rotation) * 3; // curve down on sides
+            
+            el.style.transform = `rotate(${rotation}deg) translateY(${yOffset}px)`;
+            
+            // Interaction: 3D Tilt
+            el.addEventListener('mousemove', (e) => this.handleCardTilt(e, el));
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = `rotate(${rotation}deg) translateY(${yOffset}px)`; // Reset
+                el.querySelector('.card-face').style.transform = '';
+            });
+
+            // Click to Play
+            el.onclick = (e) => {
+                e.stopPropagation(); // Prevent document click (music start)
+                if(this.gameState.isPlayerTurn) {
+                    this.battleSystem.initiateCardPlay(card, index);
+                }
+            };
+            
+            // Hover (Zoom up)
+            el.addEventListener('mouseenter', () => {
+                el.style.zIndex = '100';
+                el.style.transform = `rotate(0deg) translateY(-80px) scale(1.3)`;
+                AnimationManager.playSound('sfx-hover');
+            });
+
+            container.appendChild(el);
+        });
+    },
+
+    renderEnemyHand() {
+        const container = document.getElementById('enemyHand');
+        container.innerHTML = '';
+        // Just show card backs
+        for(let i=0; i<this.gameState.enemyHandSize; i++) {
+            const cardBack = document.createElement('div');
+            cardBack.className = 'w-16 h-24 bg-slate-800 rounded border border-slate-600 bg-[url("assets/card_back.png")] bg-cover shadow-lg transform -ml-8';
+            container.appendChild(cardBack);
+        }
+    },
+
+    // --- Board Rendering ---
+
+    renderBoard(containerId, minions, isPlayer) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        minions.forEach((minion, index) => {
+            if(!minion) return; // Skip null slots
+            
+            const el = document.createElement('div');
+            el.className = `minion-card relative group transition-all duration-200`;
+            el.dataset.minionId = minion.id;
+            el.id = minion.id; // Essential for animations to find it
+
+            // States
+            if(minion.canAttack && !minion.frozen && isPlayer) el.classList.add('can-attack');
+            if(minion.frozen) el.classList.add('frozen');
+            if(minion.abilities?.includes('taunt')) el.classList.add('taunt');
+            if(minion.divineShield) el.classList.add('divine-shield');
+
+            // Targeting Highlighting
+            if(this.battleSystem.targetingMode && this.battleSystem.validTargets.includes(minion.id)) {
+                el.classList.add(isPlayer ? 'target-valid-friendly' : 'target-valid-enemy');
+            }
+
+            el.innerHTML = `
+                <div class="absolute inset-0 rounded-full overflow-hidden border-2 border-slate-600 bg-slate-900">
+                    <img src="${minion.image}" class="w-full h-full object-cover">
+                </div>
+                <div class="stat-badge stat-attack">${minion.attack}</div>
+                <div class="stat-badge stat-health">${minion.currentHealth}</div>
+                ${minion.deathrattle ? '<div class="absolute bottom-[-10px] left-1/2 -translate-x-1/2 text-xs text-purple-400 bg-black/80 px-1 rounded">☠️</div>' : ''}
+            `;
+
+            // Events
+            el.onclick = (e) => {
+                e.stopPropagation();
+                if(this.battleSystem.targetingMode) {
+                    this.battleSystem.selectTarget(minion.id);
+                } else if(isPlayer) {
+                    this.battleSystem.initiateMinionAttack(minion, index);
+                }
+            };
+
+            // Hover tooltip for minion details
+            el.onmouseenter = () => this.showTooltip(minion, el);
+            el.onmouseleave = () => this.hideTooltip();
+
+            container.appendChild(el);
+        });
+    },
+
+    // --- Hero Rendering ---
+
+    renderHero(containerId, hero, isPlayer) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        
+        // Targeting check
+        let targetClass = '';
+        if(this.battleSystem.targetingMode && this.battleSystem.validTargets.includes(hero.id)) {
+            targetClass = isPlayer ? 'target-valid-friendly' : 'target-valid-enemy';
+        }
+
+        container.innerHTML = `
+            <div class="hero-portrait-frame ${targetClass}" id="${hero.id}">
+                <img src="${hero.image}" class="hero-portrait-image">
+                ${hero.armor > 0 ? `<div class="absolute top-0 right-0 bg-slate-400 text-black font-bold rounded-full w-8 h-8 flex items-center justify-center border-2 border-white z-20">${hero.armor}</div>` : ''}
+                <div class="absolute bottom-[-10px] right-[-5px] w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center border-2 border-white shadow-lg z-20">
+                    <span class="font-cinzel font-bold text-white text-lg drop-shadow-md">${hero.currentHealth}</span>
+                </div>
+                ${hero.attack > 0 ? `<div class="absolute bottom-[-10px] left-[-5px] w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center border-2 border-white shadow-lg z-20 font-bold text-white">${hero.attack}</div>` : ''}
+            </div>
+        `;
+
+        // Click handler for hero
+        const frame = container.querySelector('.hero-portrait-frame');
+        frame.onclick = () => {
+             if(this.battleSystem.targetingMode) {
+                 this.battleSystem.selectTarget(hero.id);
+             }
+        };
+    },
+
+    // --- Helpers ---
+
+    createCardElement(card, context, index) {
+        const el = document.createElement('div');
+        el.className = `card rarity-${card.rarity}`;
+        if(context === 'hand') el.dataset.handIndex = index;
+
+        // Flavor text is added as a data attribute for tooltips
+        el.innerHTML = `
+            <div class="card-face">
+                <div class="h-[55%] relative overflow-hidden bg-slate-900">
+                    <img src="${card.image}" class="w-full h-full object-cover">
+                    <div class="absolute top-1 left-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold border border-blue-400 shadow-md font-cinzel text-sm">${card.cost}</div>
+                </div>
+                <div class="h-[45%] p-2 flex flex-col items-center bg-slate-800 border-t border-slate-600 relative">
+                    <div class="text-center">
+                        <div class="font-cinzel font-bold text-white text-[10px] uppercase tracking-wider mb-1 text-outline truncate w-28">${card.name}</div>
+                        <div class="text-[9px] text-slate-300 leading-tight h-8 overflow-hidden text-center font-montserrat">${card.description}</div>
+                    </div>
+                    
+                    ${card.type === 'minion' ? `
+                        <div class="absolute bottom-1 left-1 w-7 h-7 bg-yellow-600 rounded-full flex items-center justify-center text-white font-bold border border-yellow-400 shadow-md font-cinzel text-sm">${card.attack}</div>
+                        <div class="absolute bottom-1 right-1 w-7 h-7 bg-red-600 rounded-full flex items-center justify-center text-white font-bold border border-red-400 shadow-md font-cinzel text-sm">${card.health}</div>
+                    ` : ''}
+                     ${card.type === 'weapon' ? `
+                        <div class="absolute bottom-1 left-1 w-7 h-7 bg-yellow-600 rounded-full flex items-center justify-center text-white font-bold border border-yellow-400 shadow-md font-cinzel text-sm">⚔️${card.attack}</div>
+                        <div class="absolute bottom-1 right-1 w-7 h-7 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold border border-slate-400 shadow-md font-cinzel text-sm">🛡️${card.durability}</div>
+                    ` : ''}
                 </div>
             </div>
+        `;
+        
+        return el;
+    },
+
+    handleCardTilt(e, el) {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = ((y - centerY) / centerY) * -10; // Invert axis
+        const rotateY = ((x - centerX) / centerX) * 10;
+        
+        el.querySelector('.card-face').style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    },
+
+    updateMana() {
+        const current = this.gameState.playerCurrentMana;
+        const max = this.gameState.playerMaxMana;
+        
+        document.getElementById('currentMana').textContent = current;
+        document.getElementById('maxMana').textContent = max;
+        
+        const crystals = document.getElementById('manaCrystals');
+        crystals.innerHTML = '';
+        for(let i=0; i<max; i++) {
+            const div = document.createElement('div');
+            div.className = `mana-crystal ${i < current ? '' : 'empty'}`;
+            crystals.appendChild(div);
+        }
+    },
+
+    renderHeroPower() {
+        const container = document.getElementById('heroPowerBtn');
+        const hero = this.gameState.playerHero;
+        const power = hero.heroPower;
+        
+        const isUsable = this.gameState.isPlayerTurn && power.timesUsedThisTurn < power.usesPerTurn && this.gameState.playerCurrentMana >= power.cost;
+        
+        container.innerHTML = `
+            <div class="w-20 h-20 rounded-full bg-slate-800 border-4 ${isUsable ? 'border-green-500 cursor-pointer hover:scale-105 shadow-[0_0_15px_#22c55e]' : 'border-slate-600 grayscale'} overflow-hidden relative transition-all">
+                <img src="${power.image}" class="w-full h-full object-cover">
+                <div class="absolute bottom-1 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white">${power.cost}</div>
+            </div>
+        `;
+        
+        if(isUsable) {
+            container.onclick = () => this.battleSystem.initiateHeroPower();
+        } else {
+            container.onclick = null;
+        }
+    },
+
+    updateBattleLog() {
+        const container = document.getElementById('battleLog');
+        // Only append new logs in a real implementation to save DOM ops, but full redraw is safer for MVP
+        container.innerHTML = '';
+        this.gameState.battleLog.slice(-8).forEach(log => {
+            const div = document.createElement('div');
+            div.className = 'mb-1 opacity-80 hover:opacity-100 transition-opacity';
+            div.textContent = `> ${log.message}`;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    },
+
+    // --- Tooltip System ---
+    
+    showTooltip(data, targetEl) {
+        // Create tooltip on body
+        const tooltip = document.createElement('div');
+        tooltip.id = 'active-tooltip';
+        tooltip.className = 'fixed z-[1000] bg-slate-900 border border-slate-600 p-4 rounded-xl shadow-2xl w-64 pointer-events-none animate-fade-in-down';
+        
+        tooltip.innerHTML = `
+            <h4 class="font-cinzel font-bold text-white text-lg mb-1 text-amber-400">${data.name}</h4>
+            <p class="text-xs text-slate-300 mb-2 italic">"${data.flavor || ''}"</p>
+            <p class="text-sm text-white">${data.description}</p>
         `;
         
         document.body.appendChild(tooltip);
         
-        // Position tooltip
-        const rect = element.getBoundingClientRect();
-        tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-        tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+        const rect = targetEl.getBoundingClientRect();
+        tooltip.style.left = `${rect.right + 20}px`;
+        tooltip.style.top = `${rect.top}px`;
         
-        // Adjust if off screen
-        if (parseInt(tooltip.style.top) < 10) {
-            tooltip.style.top = rect.bottom + 10 + 'px';
-        }
-        
-        this.cardTooltip = tooltip;
-    },
-    
-    /**
-     * Hide card tooltip
-     */
-    hideCardTooltip() {
-        if (this.cardTooltip) {
-            this.cardTooltip.remove();
-            this.cardTooltip = null;
+        // Boundary check (right edge)
+        if(rect.right + 300 > window.innerWidth) {
+            tooltip.style.left = `${rect.left - 280}px`;
         }
     },
-    
-    /**
-     * Show end game screen
-     */
-    showEndGameScreen(playerWon) {
-        const endGameScreen = document.getElementById('endGameScreen');
-        const endGameTitle = document.getElementById('endGameTitle');
-        const endGameStats = document.getElementById('endGameStats');
+
+    hideTooltip() {
+        const t = document.getElementById('active-tooltip');
+        if(t) t.remove();
+    },
+
+    // ============================================
+    // QUESTS UI
+    // ============================================
+
+    renderQuests() {
+        const list = document.getElementById('questList');
+        list.innerHTML = '';
+        const quests = this.questManager.getActiveQuestsWithProgress();
         
-        if (!endGameScreen) return;
-        
-        // Set title and color
-        if (playerWon) {
-            endGameTitle.textContent = 'VICTORY!';
-            endGameTitle.className = 'text-7xl font-bold mb-8 text-green-400';
-        } else {
-            endGameTitle.textContent = 'DEFEAT';
-            endGameTitle.className = 'text-7xl font-bold mb-8 text-red-400';
-        }
-        
-        // Show stats
-        if (endGameStats) {
-            const duration = Math.floor((Date.now() - this.gameState.gameStartTime) / 1000);
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
-            
-            endGameStats.innerHTML = `
-                <div>Game Duration: ${minutes}:${seconds.toString().padStart(2, '0')}</div>
-                <div>Cards Played: ${this.gameState.gameStats.cardsPlayed}</div>
-                <div>Damage Dealt: ${this.gameState.gameStats.damageDealt}</div>
-                <div>Minions Summoned: ${this.gameState.gameStats.minionsPlayed}</div>
-                <div>Minions Destroyed: ${this.gameState.gameStats.minionsDestroyed}</div>
+        quests.forEach(q => {
+            const el = document.createElement('div');
+            el.className = 'bg-slate-800 p-4 rounded-lg border border-slate-700 flex items-center justify-between';
+            el.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="text-3xl">${q.icon}</div>
+                    <div>
+                        <h4 class="font-bold text-white">${q.name}</h4>
+                        <p class="text-slate-400 text-sm">${q.description}</p>
+                        <div class="w-48 h-2 bg-slate-900 rounded-full mt-2 overflow-hidden">
+                            <div class="h-full bg-amber-500 transition-all duration-500" style="width: ${q.percentage}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-amber-400 font-bold text-xl">${q.reward.amount} 💰</div>
+                    <div class="text-sm text-slate-500">${q.progress}/${q.target}</div>
+                </div>
             `;
-        }
-        
-        AnimationManager.fadeTransition(
-            document.getElementById('gameBoard'),
-            endGameScreen
-        );
+            list.appendChild(el);
+        });
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    UIManager.init();
-});
+// Global Exposure
+window.UIManager = UIManager;
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = UIManager;
-}
+// Auto-init
+document.addEventListener('DOMContentLoaded', () => UIManager.init());
