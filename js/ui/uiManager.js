@@ -10,6 +10,7 @@ const UIManager = {
     battleSystem: null,
     deckBuilder: null,
     questManager: null,
+    cardTooltip: null,
     
     // ============================================
     // INITIALIZATION
@@ -371,6 +372,15 @@ const UIManager = {
                 this.addCardToDeck(card.id);
             });
             
+            // Add hover tooltip
+            cardElement.addEventListener('mouseenter', () => {
+                this.showCardTooltip(card, cardElement);
+            });
+            
+            cardElement.addEventListener('mouseleave', () => {
+                this.hideCardTooltip();
+            });
+            
             container.appendChild(cardElement);
         });
     },
@@ -675,14 +685,34 @@ const UIManager = {
             div.classList.add('frozen');
         }
         
+        // Format abilities for display
+        let abilitiesText = '';
+        if (minion.abilities && minion.abilities.length > 0) {
+            const formattedAbilities = minion.abilities
+                .filter(a => !['battlecry', 'deathrattle', 'aura', 'endTurnEffect'].includes(a))
+                .map(ability => {
+                    if (typeof formatAbilityName === 'function') {
+                        return formatAbilityName(ability);
+                    }
+                    // Fallback formatting
+                    return ability.replace(/_/g, ' ')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                });
+            
+            if (formattedAbilities.length > 0) {
+                abilitiesText = `<div class="text-purple-300 text-xs mt-1">${formattedAbilities.join(', ')}</div>`;
+            }
+        }
+        
         div.innerHTML = `
             <div class="relative h-full flex flex-col justify-between p-3 bg-gradient-to-b from-slate-700 to-slate-800 rounded-lg">
                 <div class="flex justify-between items-start">
                     <div class="stat-badge attack-badge">${minion.attack}</div>
-                    <div class="text-xs text-center">
+                    <div class="text-xs text-center flex-1 mx-2">
                         <div class="text-amber-400 font-bold">${minion.name}</div>
-                        ${minion.abilities && minion.abilities.length > 0 ? 
-                            `<div class="text-purple-300 text-xs mt-1">${minion.abilities.join(', ')}</div>` : ''}
+                        ${abilitiesText}
                     </div>
                     <div class="stat-badge health-badge">${minion.currentHealth}</div>
                 </div>
@@ -709,6 +739,15 @@ const UIManager = {
             
             cardElement.addEventListener('click', () => {
                 this.battleSystem.initiateCardPlay(card, index);
+            });
+            
+            // Add hover tooltip
+            cardElement.addEventListener('mouseenter', (e) => {
+                this.showCardTooltip(card, cardElement);
+            });
+            
+            cardElement.addEventListener('mouseleave', () => {
+                this.hideCardTooltip();
             });
             
             container.appendChild(cardElement);
@@ -846,14 +885,22 @@ const UIManager = {
      * End turn
      */
     endTurn() {
-        if (!this.gameState || !this.gameState.isPlayerTurn) {
-            AnimationManager.showNotification("It's not your turn!", 'error', 2000);
+        console.log('End turn clicked', this.gameState, this.gameState?.isPlayerTurn);
+        
+        if (!this.gameState) {
+            AnimationManager.showNotification('Game not started!', 'error', 2000);
+            return;
+        }
+        
+        if (!this.gameState.isPlayerTurn) {
+            AnimationManager.showNotification("Wait for your turn!", 'error', 2000);
             return;
         }
         
         if (this.battleSystem) {
             this.battleSystem.cancelAction();
         }
+        
         this.gameState.endPlayerTurn();
         this.updateGameBoard();
     },
@@ -862,9 +909,94 @@ const UIManager = {
      * Surrender
      */
     surrender() {
+        if (!this.gameState) {
+            AnimationManager.showNotification('No active game!', 'error', 2000);
+            return;
+        }
+        
         if (confirm('Are you sure you want to surrender?')) {
             this.gameState.playerHero.currentHealth = 0;
-            this.gameState.checkGameEnd();
+            this.gameState.endGame(false);
+        }
+    },
+    
+    /**
+     * Show card tooltip on hover
+     */
+    showCardTooltip(card, element) {
+        // Remove existing tooltip
+        this.hideCardTooltip();
+        
+        const tooltip = document.createElement('div');
+        tooltip.className = 'card-tooltip';
+        tooltip.id = 'cardTooltip';
+        
+        // Format abilities
+        let abilitiesHTML = '';
+        if (card.abilities && card.abilities.length > 0) {
+            const formattedAbilities = card.abilities.map(ability => {
+                if (typeof formatAbilityName === 'function') {
+                    return formatAbilityName(ability);
+                }
+                return ability.replace(/_/g, ' ')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            });
+            abilitiesHTML = `<div class="text-purple-300 text-sm font-bold mb-2">🔮 ${formattedAbilities.join(', ')}</div>`;
+        }
+        
+        const rarityColors = {
+            common: 'text-gray-400',
+            rare: 'text-blue-400',
+            epic: 'text-purple-400',
+            legendary: 'text-amber-400'
+        };
+        
+        tooltip.innerHTML = `
+            <div class="text-center">
+                <div class="text-2xl font-bold text-amber-400 mb-2">${card.name}</div>
+                <div class="${rarityColors[card.rarity]} text-sm font-bold uppercase mb-2">${card.rarity}</div>
+                <div class="flex justify-center gap-4 mb-3">
+                    <div class="text-blue-400 font-bold">💎 ${card.cost}</div>
+                    ${card.type === 'minion' ? `
+                        <div class="text-red-400 font-bold">⚔️ ${card.attack}</div>
+                        <div class="text-green-400 font-bold">❤️ ${card.health}</div>
+                    ` : ''}
+                    ${card.type === 'weapon' ? `
+                        <div class="text-red-400 font-bold">⚔️ ${card.attack}</div>
+                        <div class="text-yellow-400 font-bold">🛡️ ${card.durability}</div>
+                    ` : ''}
+                </div>
+                ${abilitiesHTML}
+                <div class="text-white text-sm leading-relaxed bg-black/30 p-3 rounded-lg">
+                    ${card.description}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(tooltip);
+        
+        // Position tooltip
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+        tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+        
+        // Adjust if off screen
+        if (parseInt(tooltip.style.top) < 10) {
+            tooltip.style.top = rect.bottom + 10 + 'px';
+        }
+        
+        this.cardTooltip = tooltip;
+    },
+    
+    /**
+     * Hide card tooltip
+     */
+    hideCardTooltip() {
+        if (this.cardTooltip) {
+            this.cardTooltip.remove();
+            this.cardTooltip = null;
         }
     },
     

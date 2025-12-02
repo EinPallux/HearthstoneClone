@@ -121,11 +121,11 @@ body {
     width: 140px;
     height: 200px;
     transition: all 0.3s ease;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .card-in-hand:hover {
-    transform: translateY(-30px) scale(1.12);
+    transform: translateY(-25px) scale(1.12);
     z-index: 50;
 }
 
@@ -259,6 +259,7 @@ body {
 
 /* === HEALTH/ATTACK BADGES === */
 .stat-badge {
+    min-width: 36px;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -268,6 +269,7 @@ body {
     font-weight: bold;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
 }
 
 .attack-badge {
@@ -744,14 +746,14 @@ body {
 /* === TOOLTIP STYLES === */
 .tooltip {
     position: absolute;
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(15, 23, 42, 0.98);
     color: white;
     padding: 12px;
     border-radius: 8px;
     font-size: 14px;
     z-index: 1001;
-    max-width: 250px;
-    border: 1px solid rgba(139, 92, 246, 0.5);
+    max-width: 300px;
+    border: 2px solid rgba(139, 92, 246, 0.6);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     pointer-events: none;
 }
@@ -764,5 +766,19 @@ body {
     transform: translateX(-50%);
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-top: 8px solid rgba(15, 23, 42, 0.95);
+    border-top: 8px solid rgba(15, 23, 42, 0.98);
+}
+
+.card-tooltip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.5);
+    border: 3px solid #8b5cf6;
+    min-width: 250px;
+    max-width: 350px;
 }

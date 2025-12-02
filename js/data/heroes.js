@@ -401,7 +401,30 @@ function createHeroInstance(heroId) {
     };
 }
 
+// Helper function to format ability names for display
+function formatAbilityName(ability) {
+    const abilityNames = {
+        'taunt': 'Taunt',
+        'divine_shield': 'Divine Shield',
+        'charge': 'Charge',
+        'windfury': 'Windfury',
+        'lifesteal': 'Lifesteal',
+        'poisonous': 'Poisonous',
+        'stealth': 'Stealth',
+        'spell_damage': 'Spell Damage',
+        'battlecry': 'Battlecry',
+        'deathrattle': 'Deathrattle',
+        'enrage': 'Enrage',
+        'freeze': 'Freeze',
+        'silence': 'Silence',
+        'elusive': 'Elusive',
+        'cleave': 'Cleave'
+    };
+    
+    return abilityNames[ability] || ability;
+}
+
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { HEROES, getHeroById, createHeroInstance };
+    module.exports = { HEROES, getHeroById, createHeroInstance, formatAbilityName };
 }
