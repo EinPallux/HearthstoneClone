@@ -846,12 +846,14 @@ const UIManager = {
      * End turn
      */
     endTurn() {
-        if (!this.gameState.isPlayerTurn) {
+        if (!this.gameState || !this.gameState.isPlayerTurn) {
             AnimationManager.showNotification("It's not your turn!", 'error', 2000);
             return;
         }
         
-        this.battleSystem.cancelAction();
+        if (this.battleSystem) {
+            this.battleSystem.cancelAction();
+        }
         this.gameState.endPlayerTurn();
         this.updateGameBoard();
     },

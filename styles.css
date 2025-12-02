@@ -121,16 +121,18 @@ body {
     width: 140px;
     height: 200px;
     transition: all 0.3s ease;
+    margin-bottom: 10px;
 }
 
 .card-in-hand:hover {
-    transform: translateY(-40px) scale(1.15);
+    transform: translateY(-30px) scale(1.12);
+    z-index: 50;
 }
 
 /* === MINION CARD ON BOARD === */
 .minion-card {
-    width: 140px;
-    height: 180px;
+    width: 130px;
+    height: 170px;
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     border-radius: 10px;
     cursor: pointer;
