@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcane Legends - Card Battle Game</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        /* Tailwind config for custom colors */
+        @layer utilities {
+            .text-shadow-glow {
+                text-shadow: 0 0 20px currentColor;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 min-h-screen overflow-hidden">
+    
+    <!-- MAIN MENU / LANDING PAGE -->
+    <div id="mainMenu" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        
+        <div class="relative z-10 w-full max-w-7xl mx-auto px-8">
+            <!-- Title -->
+            <div class="text-center mb-12">
+                <h1 class="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 mb-4 text-shadow-glow" style="font-family: 'Cinzel', serif;">
+                    ARCANE LEGENDS
+                </h1>
+                <p class="text-2xl text-purple-200" style="font-family: 'Montserrat', sans-serif;">
+                    Master the Cards. Conquer the Arena.
+                </p>
+            </div>
+
+            <!-- Main Menu Buttons -->
+            <div id="menuButtons" class="flex flex-col items-center space-y-6">
+                <button id="btnSelectHero" class="menu-btn w-96 py-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-purple-500/50">
+                    Select Hero
+                </button>
+                <button id="btnDeckBuilder" class="menu-btn w-96 py-5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-amber-500/50">
+                    Deck Builder
+                </button>
+                <button id="btnQuests" class="menu-btn w-96 py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-green-500/50">
+                    Quests
+                </button>
+                <button id="btnStartGame" class="menu-btn w-96 py-5 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white text-2xl font-bold rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-red-500/50">
+                    Start Battle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERO SELECTION SCREEN -->
+    <div id="heroSelection" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900"></div>
+        
+        <div class="relative z-10 h-full flex flex-col p-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h2 class="text-6xl font-bold text-amber-400 mb-4" style="font-family: 'Cinzel', serif;">Choose Your Champion</h2>
+                <p class="text-xl text-purple-200">Each hero has unique abilities and playstyles</p>
+            </div>
+
+            <!-- Hero Grid -->
+            <div id="heroGrid" class="flex-1 grid grid-cols-5 gap-6 px-12">
+                <!-- Heroes will be dynamically inserted here -->
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-8">
+                <button id="btnBackFromHero" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
+                    Back to Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DECK BUILDER SCREEN -->
+    <div id="deckBuilder" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900"></div>
+        
+        <div class="relative z-10 h-full flex flex-col p-6">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-5xl font-bold text-amber-400" style="font-family: 'Cinzel', serif;">Deck Builder</h2>
+                <div class="flex gap-4">
+                    <button id="btnSuggestDeck" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
+                        ✨ AI Suggest Deck
+                    </button>
+                    <button id="btnPreBuiltDecks" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
+                        📚 Pre-Built Decks
+                    </button>
+                    <button id="btnBackFromDeck" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
+                        Back
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex gap-6">
+                <!-- Card Collection (Left Side) -->
+                <div class="flex-1 bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-white">Card Collection</h3>
+                        <div class="flex gap-2">
+                            <select id="filterCost" class="px-4 py-2 bg-slate-700 text-white rounded-lg">
+                                <option value="all">All Costs</option>
+                                <option value="0-2">0-2 Mana</option>
+                                <option value="3-4">3-4 Mana</option>
+                                <option value="5-6">5-6 Mana</option>
+                                <option value="7+">7+ Mana</option>
+                            </select>
+                            <select id="filterType" class="px-4 py-2 bg-slate-700 text-white rounded-lg">
+                                <option value="all">All Types</option>
+                                <option value="minion">Minions</option>
+                                <option value="spell">Spells</option>
+                                <option value="weapon">Weapons</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="cardCollection" class="grid grid-cols-4 gap-4 overflow-y-auto h-[calc(100%-60px)] pr-2">
+                        <!-- Cards will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Current Deck (Right Side) -->
+                <div class="w-96 bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-white">Current Deck</h3>
+                        <span id="deckCount" class="text-xl font-bold text-amber-400">0/25</span>
+                    </div>
+                    <div class="mb-4">
+                        <input id="deckName" type="text" placeholder="Deck Name" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg border-2 border-slate-600 focus:border-amber-400 outline-none">
+                    </div>
+                    <div id="currentDeck" class="overflow-y-auto h-[calc(100%-120px)] space-y-2">
+                        <!-- Selected cards will appear here -->
+                    </div>
+                    <button id="btnSaveDeck" class="w-full mt-4 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
+                        Save Deck
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUESTS SCREEN -->
+    <div id="questsScreen" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-green-900 to-slate-900"></div>
+        
+        <div class="relative z-10 h-full flex flex-col p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-6xl font-bold text-amber-400 mb-4" style="font-family: 'Cinzel', serif;">Quest Log</h2>
+                <p class="text-xl text-purple-200">Complete quests to earn rewards</p>
+            </div>
+
+            <div id="questList" class="flex-1 max-w-4xl mx-auto w-full space-y-4 overflow-y-auto">
+                <!-- Quests will be dynamically inserted here -->
+            </div>
+
+            <div class="text-center mt-8">
+                <button id="btnBackFromQuests" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
+                    Back to Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIFFICULTY SELECTION -->
+    <div id="difficultySelection" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        
+        <div class="relative z-10 flex items-center justify-center h-full">
+            <div class="bg-slate-800 rounded-2xl p-12 max-w-2xl">
+                <h2 class="text-5xl font-bold text-amber-400 mb-8 text-center" style="font-family: 'Cinzel', serif;">Select Difficulty</h2>
+                
+                <div class="space-y-6">
+                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="easy">
+                        <div>🌱 Easy</div>
+                        <div class="text-sm font-normal mt-2">Casual gameplay for beginners</div>
+                    </button>
+                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="medium">
+                        <div>⚔️ Medium</div>
+                        <div class="text-sm font-normal mt-2">Balanced challenge for experienced players</div>
+                    </button>
+                    <button class="difficulty-btn w-full py-6 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 hover:scale-105" data-difficulty="hard">
+                        <div>🔥 Hard</div>
+                        <div class="text-sm font-normal mt-2">Ultimate challenge for masters</div>
+                    </button>
+                </div>
+
+                <button id="btnBackFromDifficulty" class="w-full mt-8 py-4 bg-slate-700 hover:bg-slate-600 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME BOARD -->
+    <div id="gameBoard" class="fixed inset-0 z-40 hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900"></div>
+        
+        <div class="relative z-10 h-full flex flex-col">
+            <!-- Top Bar -->
+            <div class="flex justify-between items-center p-4 bg-slate-900/80 backdrop-blur-sm">
+                <button id="btnSurrender" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-xl transition-all duration-300">
+                    Surrender
+                </button>
+                <div id="turnIndicator" class="text-3xl font-bold text-amber-400" style="font-family: 'Cinzel', serif;">
+                    YOUR TURN
+                </div>
+                <button id="btnEndTurn" class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white text-xl font-bold rounded-lg shadow-xl transition-all duration-300 hover:scale-105">
+                    End Turn
+                </button>
+            </div>
+
+            <!-- Enemy Area -->
+            <div class="flex-shrink-0 p-4">
+                <!-- Enemy Hero -->
+                <div class="flex justify-center mb-4">
+                    <div id="enemyHero" class="hero-portrait bg-slate-800 rounded-xl p-4 shadow-2xl border-4 border-red-500 cursor-pointer hover:scale-105 transition-transform">
+                        <!-- Hero details will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Enemy Board -->
+                <div id="enemyBoard" class="flex justify-center gap-3 min-h-[180px] p-4 bg-red-900/20 rounded-xl border-2 border-red-500/30">
+                    <!-- Enemy minions will appear here -->
+                </div>
+            </div>
+
+            <!-- Middle Section -->
+            <div class="flex-1 flex items-center justify-center">
+                <div id="battleLog" class="bg-slate-900/50 backdrop-blur-sm rounded-xl p-4 w-96 h-48 overflow-y-auto">
+                    <div class="text-amber-400 text-sm space-y-1">
+                        <!-- Battle log messages will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Area -->
+            <div class="flex-shrink-0 p-4">
+                <!-- Player Board -->
+                <div id="playerBoard" class="flex justify-center gap-3 min-h-[180px] p-4 bg-blue-900/20 rounded-xl border-2 border-blue-500/30 mb-4">
+                    <!-- Player minions will appear here -->
+                </div>
+
+                <!-- Player Hero -->
+                <div class="flex justify-center mb-4">
+                    <div id="playerHero" class="hero-portrait bg-slate-800 rounded-xl p-4 shadow-2xl border-4 border-blue-500">
+                        <!-- Hero details will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Hand -->
+            <div class="flex-shrink-0 bg-slate-900/80 backdrop-blur-sm p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center gap-4">
+                        <div id="manaDisplay" class="text-2xl font-bold text-blue-400">
+                            <span id="currentMana">0</span>/<span id="maxMana">0</span> 💎
+                        </div>
+                        <div id="deckCount" class="text-lg text-purple-300">
+                            Deck: <span id="remainingCards">25</span>
+                        </div>
+                    </div>
+                    <div id="heroPowerBtn" class="cursor-pointer">
+                        <!-- Hero power button will be inserted here -->
+                    </div>
+                </div>
+                <div id="playerHand" class="flex justify-center gap-2 min-h-[200px]">
+                    <!-- Player hand cards will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory/Defeat Screen -->
+    <div id="endGameScreen" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+        <div class="relative z-10 flex items-center justify-center h-full">
+            <div class="bg-slate-800 rounded-2xl p-12 text-center max-w-2xl">
+                <h2 id="endGameTitle" class="text-7xl font-bold mb-8" style="font-family: 'Cinzel', serif;">VICTORY!</h2>
+                <div id="endGameStats" class="text-xl text-purple-200 space-y-2 mb-8">
+                    <!-- Stats will be inserted here -->
+                </div>
+                <div class="flex gap-4 justify-center">
+                    <button id="btnPlayAgain" class="px-12 py-4 bg-green-600 hover:bg-green-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
+                        Play Again
+                    </button>
+                    <button id="btnMainMenu" class="px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all duration-300">
+                        Main Menu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading/Transition Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+        <div class="relative z-10 flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="text-6xl mb-4">⚔️</div>
+                <div class="text-3xl font-bold text-amber-400 animate-pulse">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data/heroes.js"></script>
+    <script src="js/data/cards.js"></script>
+    <script src="js/data/quests.js"></script>
+    <script src="js/utils/animations.js"></script>
+    <script src="js/utils/storage.js"></script>
+    <script src="js/core/gameState.js"></script>
+    <script src="js/core/deckBuilder.js"></script>
+    <script src="js/core/battleSystem.js"></script>
+    <script src="js/core/ai.js"></script>
+    <script src="js/ui/uiManager.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
